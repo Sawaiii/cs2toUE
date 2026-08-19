@@ -10,27 +10,47 @@ from pathlib import Path
 
 # --------------------------------------------------------------------------- log
 
-_COLOR = os.environ.get("NO_COLOR") is None and sys.stdout.isatty()
+def _isatty() -> bool:
+    """A windowed build has no stdout at all - sys.stdout is None there."""
+    try:
+        return sys.stdout is not None and sys.stdout.isatty()
+    except Exception:
+        return False
+
+
+_COLOR = os.environ.get("NO_COLOR") is None and _isatty()
 
 
 def _c(code: str, text: str) -> str:
     return f"\033[{code}m{text}\033[0m" if _COLOR else text
 
 
+def emit(text: str, stream=None) -> None:
+    """Write a line if there is anywhere to write it. Never raises."""
+    stream = stream if stream is not None else sys.stdout
+    if stream is None:
+        return
+    try:
+        stream.write(text + "\n")
+        stream.flush()
+    except Exception:
+        pass
+
+
 def info(msg: str) -> None:
-    print(f"{_c('36', '::')} {msg}")
+    emit(f"{_c('36', '::')} {msg}")
 
 
 def ok(msg: str) -> None:
-    print(f"{_c('32', 'OK')} {msg}")
+    emit(f"{_c('32', 'OK')} {msg}")
 
 
 def warn(msg: str) -> None:
-    print(f"{_c('33', '!!')} {msg}")
+    emit(f"{_c('33', '!!')} {msg}")
 
 
 def err(msg: str) -> None:
-    print(f"{_c('31', 'XX')} {msg}", file=sys.stderr)
+    emit(f"{_c('31', 'XX')} {msg}", sys.stderr)
 
 
 def die(msg: str, code: int = 1):
@@ -132,13 +152,18 @@ def download(url: str, dest: Path, expected_size: int | None = None) -> Path:
                 break
             f.write(chunk)
             done += len(chunk)
-            if total:
-                pct = 100.0 * done / total
-                sys.stdout.write(f"\r    {human(done)} / {human(total)}  {pct:5.1f}%")
-            else:
-                sys.stdout.write(f"\r    {human(done)}")
-            sys.stdout.flush()
-    sys.stdout.write("\n")
+            if sys.stdout is None:
+                continue
+            try:
+                if total:
+                    pct = 100.0 * done / total
+                    sys.stdout.write(f"\r    {human(done)} / {human(total)}  {pct:5.1f}%")
+                else:
+                    sys.stdout.write(f"\r    {human(done)}")
+                sys.stdout.flush()
+            except Exception:
+                pass
+    emit("")
     if dest.exists():
         dest.unlink()
     part.rename(dest)

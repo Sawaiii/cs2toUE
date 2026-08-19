@@ -36,10 +36,10 @@ class App:
         self.log_q = queue.Queue()
 
         root.title(TITLE)
-        root.geometry("980x680")
-        root.minsize(820, 560)
+        root.minsize(900, 560)
 
         self._build_ui()
+        self._fit_window()
         self._pump_log()
         self.log(f"workspace: {self.cfg.ws}")
         if not self.cfg.cs2_exe:
@@ -51,6 +51,21 @@ class App:
         self.log(f"cs2.exe: {self.cfg.cs2_exe or 'NOT FOUND - set it in Settings'}")
         self._show_ue_state()
         self.check_update()
+
+
+    def _fit_window(self):
+        """Size the window to what the layout needs, but never past the screen."""
+        self.root.update_idletasks()
+        screen_h = self.root.winfo_screenheight()
+        # a canvas has no natural height, so tell it how tall the pipeline actually is
+        self._pipeline_canvas.configure(
+            height=min(self._pipeline_inner.winfo_reqheight(), int(screen_h * 0.62)))
+        self.root.update_idletasks()
+        width = min(max(self.root.winfo_reqwidth(), 980), self.root.winfo_screenwidth() - 60)
+        height = min(self.root.winfo_reqheight(), int(screen_h * 0.9))
+        x = max(0, (self.root.winfo_screenwidth() - width) // 2)
+        y = max(0, (self.root.winfo_screenheight() - height) // 3)
+        self.root.geometry(f"{width}x{height}+{x}+{y}")
 
     # ---------------------------------------------------------------- ui
 
@@ -66,6 +81,12 @@ class App:
         self.update_btn = ttk.Button(top, text="Обновить", command=self.run_update)
         self.update_label = ttk.Label(top, text="", foreground="#1a7f37")
 
+        # packed before the body, so the log always keeps its place at the bottom
+        logf = ttk.LabelFrame(self.root, text="Log")
+        logf.pack(side="bottom", fill="x", padx=8, pady=(0, 6))
+        self.log_text = tk.Text(logf, height=7, wrap="word")
+        self.log_text.pack(fill="both", expand=True, padx=6, pady=6)
+
         body = ttk.Frame(self.root)
         body.pack(fill="both", expand=True, **pad)
 
@@ -74,8 +95,28 @@ class App:
         self.info_text = tk.Text(left, height=14, width=52, wrap="none")
         self.info_text.pack(fill="both", expand=True, padx=6, pady=6)
 
-        right = ttk.LabelFrame(body, text="Pipeline")
-        right.pack(side="left", fill="both", expand=True, padx=(8, 0))
+        # The pipeline column is tall. On a small screen it has to scroll instead of
+        # pushing the log (and everything else) out of the window.
+        right_outer = ttk.LabelFrame(body, text="Pipeline")
+        right_outer.pack(side="left", fill="both", expand=True, padx=(8, 0))
+        canvas = tk.Canvas(right_outer, highlightthickness=0, borderwidth=0)
+        vsb = ttk.Scrollbar(right_outer, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=vsb.set)
+        vsb.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+
+        right = ttk.Frame(canvas)
+        self._pipeline_canvas = canvas
+        self._pipeline_inner = right
+        window = canvas.create_window((0, 0), window=right, anchor="nw")
+        right.bind("<Configure>",
+                   lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.bind("<Configure>", lambda e: canvas.itemconfigure(window, width=e.width))
+
+        def _wheel(event):
+            canvas.yview_scroll(int(-event.delta / 120), "units")
+        canvas.bind("<Enter>", lambda e: canvas.bind_all("<MouseWheel>", _wheel))
+        canvas.bind("<Leave>", lambda e: canvas.unbind_all("<MouseWheel>"))
 
         hl = ttk.LabelFrame(right, text="1. HLAE build for this demo")
         hl.pack(fill="x", padx=6, pady=6)
@@ -159,10 +200,6 @@ class App:
         self.ue_text.pack(fill="both", expand=True, padx=6, pady=6)
         ttk.Button(ue, text="Copy command", command=self.copy_ue).pack(anchor="w", padx=6, pady=4)
 
-        logf = ttk.LabelFrame(self.root, text="Log")
-        logf.pack(fill="both", expand=True, **pad)
-        self.log_text = tk.Text(logf, height=10, wrap="word")
-        self.log_text.pack(fill="both", expand=True, padx=6, pady=6)
 
     # ---------------------------------------------------------------- infra
 

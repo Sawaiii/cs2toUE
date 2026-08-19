@@ -18,12 +18,24 @@ def main() -> int:
 
     try:
         from cs2toue.gui import main as gui_main
-    except Exception as exc:                      # tkinter missing on a stripped python
-        print(f"cannot start the window: {exc}")
-        print("use the command line instead: cs2toue-cli.exe --help")
+        gui_main()
+        return 0
+    except Exception as exc:
+        # a windowed build has no console, so the only way to say anything is a dialog
+        message = f"cs2toUE не смог открыть окно:\n\n{type(exc).__name__}: {exc}\n\n" \
+                  f"Командная строка должна работать: cs2toue-cli.exe --help"
+        if sys.stdout is not None:
+            print(message)
+        try:
+            import tkinter.messagebox as mb
+            import tkinter as tk
+            root = tk.Tk()
+            root.withdraw()
+            mb.showerror("cs2toUE", message)
+            root.destroy()
+        except Exception:
+            pass
         return 1
-    gui_main()
-    return 0
 
 
 if __name__ == "__main__":
