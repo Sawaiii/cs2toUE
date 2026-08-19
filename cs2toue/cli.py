@@ -589,7 +589,7 @@ def cmd_update(args):
         if answer not in ("y", "yes", "д", "да"):
             print("отменено")
             return
-    updater.update(cfg, args.current, force=True, restart=not args.no_restart)
+    updater.update(cfg, args.current, force=True, restart=not args.no_restart, wait=120)
 
 
 def cmd_clips(args):

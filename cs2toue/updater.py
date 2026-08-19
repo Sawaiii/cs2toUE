@@ -162,20 +162,26 @@ rem cs2toUE updater - generated automatically, deletes itself at the end.
 setlocal
 set "SRC={staged}"
 set "DST={install}"
+set "LOG={log}"
 
-rem wait for the running program to close (up to 30 seconds)
-for /l %%i in (1,1,30) do (
-  tasklist /fi "imagename eq cs2toUE.exe" | find /i "cs2toUE.exe" >nul || goto :copy
-  ping -n 2 127.0.0.1 >nul
-)
+echo update to {version} started %DATE% %TIME%> "%LOG%"
+set TRIES=0
+
+rem Wait until nothing is holding the files: both the window and the console build
+rem count, because either one can be the process that asked for the update.
+:waitloop
+set /a TRIES+=1
+if %TRIES% gtr 60 goto :copy
+tasklist /fi "imagename eq cs2toUE.exe" | find /i "cs2toUE.exe" >nul && (ping -n 2 127.0.0.1 >nul & goto :waitloop)
+tasklist /fi "imagename eq cs2toue-cli.exe" | find /i "cs2toue-cli.exe" >nul && (ping -n 2 127.0.0.1 >nul & goto :waitloop)
 
 :copy
-robocopy "%SRC%" "%DST%" /e /is /it /njh /njs /ndl /nfl /nc /ns >nul
+robocopy "%SRC%" "%DST%" /e /is /it /r:2 /w:1 /njh /njs /ndl /nfl /nc /ns >> "%LOG%"
 if errorlevel 8 (
-  echo Update failed, the old version is untouched.
-  pause
+  echo RESULT FAILED>> "%LOG%"
   goto :done
 )
+echo RESULT OK>> "%LOG%"
 rmdir /s /q "%SRC%" 2>nul
 
 {restart}
@@ -186,27 +192,53 @@ del "%~f0"
 """
 
 
-def apply(cfg, staged: Path, restart: bool = True) -> Path:
-    """Write and launch the helper that swaps the files once we exit."""
+def apply(cfg, staged: Path, restart: bool = True, wait: int = 0, version: str = "") -> bool:
+    """Write and launch the helper that swaps the files once this process exits.
+
+    The helper runs hidden but *with* a console: a detached process has none at all,
+    and cmd.exe cannot run a batch file without one - that silently did nothing.
+    """
     install = _install_dir()
     restart_line = f'start "" "{install / "cs2toUE.exe"}"' if restart else "rem no restart"
-    helper = cfg.ws / "update" / "apply_update.cmd"
-    helper.parent.mkdir(parents=True, exist_ok=True)
+    updir = cfg.ws / "update"
+    updir.mkdir(parents=True, exist_ok=True)
+    log = updir / "update.log"
+    if log.exists():
+        log.unlink()
+    helper = updir / "apply_update.cmd"
     helper.write_text(
-        HELPER.format(staged=staged, install=install, restart=restart_line),
+        HELPER.format(staged=staged, install=install, log=log,
+                      version=version or "new version", restart=restart_line),
         encoding="utf-8",
     )
     subprocess.Popen(
         ["cmd", "/c", str(helper)],
         creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)
-        | getattr(subprocess, "DETACHED_PROCESS", 0),
+        | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0),
         cwd=str(cfg.ws),
     )
-    return helper
+    if not wait:
+        return True
+    # only the command line waits: the window has to close before the swap can happen
+    deadline = time.time() + wait
+    while time.time() < deadline:
+        if log.is_file():
+            text = log.read_text(encoding="utf-8", errors="replace")
+            if "RESULT OK" in text:
+                return True
+            if "RESULT FAILED" in text:
+                raise Fail(f"замена файлов не удалась, старая версия на месте - см. {log}")
+        time.sleep(0.5)
+    return False
 
 
-def update(cfg, current: str = "", force: bool = False, restart: bool = True) -> Update:
-    """Full flow: check, download, stage, hand over to the helper."""
+def update(cfg, current: str = "", force: bool = False, restart: bool = True,
+           wait: int = 0) -> Update:
+    """Full flow: check, download, stage, hand over to the helper.
+
+    wait > 0 (command line): stay until the swap is done and report the real outcome.
+    wait == 0 (window): the helper waits for this process to close first.
+    """
     if not FROZEN:
         raise Fail("обновление работает только для установленной программы; "
                    "в исходниках используйте git pull")
@@ -217,6 +249,9 @@ def update(cfg, current: str = "", force: bool = False, restart: bool = True) ->
         info(upd.summary)
         return upd
     staged = stage(cfg, upd)
-    apply(cfg, staged, restart)
-    ok(f"обновление до {upd.version} начнётся сразу после выхода из программы")
+    # never wait here: the helper cannot replace an exe that this very process is
+    # running, so it waits for us to exit first
+    apply(cfg, staged, restart, wait=0, version=upd.version)
+    ok(f"обновление до {upd.version} применится сразу после выхода из программы"
+       + (" и она запустится снова" if restart else ""))
     return upd
