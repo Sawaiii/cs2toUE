@@ -1,0 +1,2673 @@
+{
+ "source": "SteamDatabase/GameTracking-CS2 :: game/csgo/steam.inf",
+ "count": 381,
+ "versions": [
+  {
+   "client": 2000049,
+   "patch": "1.38.5.8",
+   "revision": 7939620,
+   "date": "2023-03-22",
+   "version_date": "Mar 22 2023"
+  },
+  {
+   "client": 2000051,
+   "patch": "1.38.6.0",
+   "revision": 7941244,
+   "date": "2023-03-23",
+   "version_date": "Mar 22 2023"
+  },
+  {
+   "client": 2000052,
+   "patch": "1.38.6.0",
+   "revision": 7941690,
+   "date": "2023-03-23",
+   "version_date": "Mar 22 2023"
+  },
+  {
+   "client": 2000058,
+   "patch": "1.38.6.2",
+   "revision": 7947426,
+   "date": "2023-03-24",
+   "version_date": "Mar 24 2023"
+  },
+  {
+   "client": 2000059,
+   "patch": "1.38.6.2",
+   "revision": 7948168,
+   "date": "2023-03-25",
+   "version_date": "Mar 24 2023"
+  },
+  {
+   "client": 2000060,
+   "patch": "1.38.6.4",
+   "revision": 7960069,
+   "date": "2023-03-30",
+   "version_date": "Mar 30 2023"
+  },
+  {
+   "client": 2000062,
+   "patch": "1.38.6.6",
+   "revision": 7962855,
+   "date": "2023-03-31",
+   "version_date": "Mar 30 2023"
+  },
+  {
+   "client": 2000063,
+   "patch": "1.38.6.8",
+   "revision": 7964241,
+   "date": "2023-03-31",
+   "version_date": "Mar 31 2023"
+  },
+  {
+   "client": 2000064,
+   "patch": "1.38.7.0",
+   "revision": 8008385,
+   "date": "2023-04-25",
+   "version_date": "Apr 24 2023"
+  },
+  {
+   "client": 2000070,
+   "patch": "1.38.8.0",
+   "revision": 8106650,
+   "date": "2023-06-06",
+   "version_date": "Jun 06 2023"
+  },
+  {
+   "client": 2000072,
+   "patch": "1.38.8.2",
+   "revision": 8110277,
+   "date": "2023-06-07",
+   "version_date": "Jun 07 2023"
+  },
+  {
+   "client": 2000073,
+   "patch": "1.38.8.4",
+   "revision": 8113791,
+   "date": "2023-06-09",
+   "version_date": "Jun 08 2023"
+  },
+  {
+   "client": 2000074,
+   "patch": "1.38.8.6",
+   "revision": 8116890,
+   "date": "2023-06-09",
+   "version_date": "Jun 09 2023"
+  },
+  {
+   "client": 2000075,
+   "patch": "1.38.8.8",
+   "revision": 8129791,
+   "date": "2023-06-14",
+   "version_date": "Jun 14 2023"
+  },
+  {
+   "client": 2000076,
+   "patch": "1.38.8.8",
+   "revision": 8130349,
+   "date": "2023-06-15",
+   "version_date": "Jun 14 2023"
+  },
+  {
+   "client": 2000077,
+   "patch": "1.38.9.0",
+   "revision": 8132948,
+   "date": "2023-06-15",
+   "version_date": "Jun 15 2023"
+  },
+  {
+   "client": 2000078,
+   "patch": "1.38.9.2",
+   "revision": 8142152,
+   "date": "2023-06-20",
+   "version_date": "Jun 20 2023"
+  },
+  {
+   "client": 2000079,
+   "patch": "1.38.9.4",
+   "revision": 8163286,
+   "date": "2023-06-30",
+   "version_date": "Jun 29 2023"
+  },
+  {
+   "client": 2000080,
+   "patch": "1.38.9.6",
+   "revision": 8166392,
+   "date": "2023-06-30",
+   "version_date": "Jun 30 2023"
+  },
+  {
+   "client": 2000081,
+   "patch": "1.39.0.0",
+   "revision": 8196531,
+   "date": "2023-07-17",
+   "version_date": "Jul 17 2023"
+  },
+  {
+   "client": 2000082,
+   "patch": "1.39.0.2",
+   "revision": 8198168,
+   "date": "2023-07-18",
+   "version_date": "Jul 17 2023"
+  },
+  {
+   "client": 2000084,
+   "patch": "1.39.0.4",
+   "revision": 8200637,
+   "date": "2023-07-18",
+   "version_date": "Jul 18 2023"
+  },
+  {
+   "client": 2000086,
+   "patch": "1.39.0.6",
+   "revision": 8203792,
+   "date": "2023-07-20",
+   "version_date": "Jul 19 2023"
+  },
+  {
+   "client": 2000087,
+   "patch": "1.39.0.8",
+   "revision": 8209395,
+   "date": "2023-07-21",
+   "version_date": "Jul 21 2023"
+  },
+  {
+   "client": 2000088,
+   "patch": "1.39.1.0",
+   "revision": 8215368,
+   "date": "2023-07-25",
+   "version_date": "Jul 25 2023"
+  },
+  {
+   "client": 2000090,
+   "patch": "1.39.1.2",
+   "revision": 8234194,
+   "date": "2023-08-02",
+   "version_date": "Aug 02 2023"
+  },
+  {
+   "client": 2000091,
+   "patch": "1.39.1.4",
+   "revision": 8238873,
+   "date": "2023-08-03",
+   "version_date": "Aug 03 2023"
+  },
+  {
+   "client": 2000092,
+   "patch": "1.39.1.6",
+   "revision": 8245236,
+   "date": "2023-08-07",
+   "version_date": "Aug 07 2023"
+  },
+  {
+   "client": 2000094,
+   "patch": "1.39.1.8",
+   "revision": 8266992,
+   "date": "2023-08-15",
+   "version_date": "Aug 15 2023"
+  },
+  {
+   "client": 2000095,
+   "patch": "1.39.1.8",
+   "revision": 8270466,
+   "date": "2023-08-16",
+   "version_date": "Aug 16 2023"
+  },
+  {
+   "client": 2000096,
+   "patch": "1.39.2.0",
+   "revision": 8270972,
+   "date": "2023-08-16",
+   "version_date": "Aug 16 2023"
+  },
+  {
+   "client": 2000097,
+   "patch": "1.39.2.2",
+   "revision": 8275424,
+   "date": "2023-08-17",
+   "version_date": "Aug 17 2023"
+  },
+  {
+   "client": 2000098,
+   "patch": "1.39.2.4",
+   "revision": 8278380,
+   "date": "2023-08-18",
+   "version_date": "Aug 18 2023"
+  },
+  {
+   "client": 2000106,
+   "patch": "1.39.2.6",
+   "revision": 8308626,
+   "date": "2023-08-31",
+   "version_date": "Aug 31 2023"
+  },
+  {
+   "client": 2000109,
+   "patch": "1.39.2.6",
+   "revision": 8309722,
+   "date": "2023-09-01",
+   "version_date": "Aug 31 2023"
+  },
+  {
+   "client": 2000111,
+   "patch": "1.39.2.8",
+   "revision": 8311564,
+   "date": "2023-09-02",
+   "version_date": "Sep 01 2023"
+  },
+  {
+   "client": 2000115,
+   "patch": "1.39.3.0",
+   "revision": 8316084,
+   "date": "2023-09-05",
+   "version_date": "Sep 05 2023"
+  },
+  {
+   "client": 2000117,
+   "patch": "1.39.3.2",
+   "revision": 8320101,
+   "date": "2023-09-06",
+   "version_date": "Sep 06 2023"
+  },
+  {
+   "client": 2000118,
+   "patch": "1.39.3.4",
+   "revision": 8323676,
+   "date": "2023-09-07",
+   "version_date": "Sep 07 2023"
+  },
+  {
+   "client": 2000119,
+   "patch": "1.39.3.6",
+   "revision": 8327329,
+   "date": "2023-09-08",
+   "version_date": "Sep 08 2023"
+  },
+  {
+   "client": 2000120,
+   "patch": "1.39.3.6",
+   "revision": 8327761,
+   "date": "2023-09-08",
+   "version_date": "Sep 08 2023"
+  },
+  {
+   "client": 2000121,
+   "patch": "1.39.3.6",
+   "revision": 8328398,
+   "date": "2023-09-09",
+   "version_date": "Sep 08 2023"
+  },
+  {
+   "client": 2000123,
+   "patch": "1.39.3.8",
+   "revision": 8337127,
+   "date": "2023-09-13",
+   "version_date": "Sep 13 2023"
+  },
+  {
+   "client": 2000124,
+   "patch": "1.39.3.8",
+   "revision": 8338319,
+   "date": "2023-09-14",
+   "version_date": "Sep 13 2023"
+  },
+  {
+   "client": 2000126,
+   "patch": "1.39.4.0",
+   "revision": 8340040,
+   "date": "2023-09-14",
+   "version_date": "Sep 14 2023"
+  },
+  {
+   "client": 2000127,
+   "patch": "1.39.4.2",
+   "revision": 8343651,
+   "date": "2023-09-15",
+   "version_date": "Sep 15 2023"
+  },
+  {
+   "client": 2000140,
+   "patch": "1.39.4.4",
+   "revision": 8375056,
+   "date": "2023-09-27",
+   "version_date": "Sep 27 2023"
+  },
+  {
+   "client": 2000141,
+   "patch": "1.39.4.6",
+   "revision": 8377445,
+   "date": "2023-09-28",
+   "version_date": "Sep 27 2023"
+  },
+  {
+   "client": 2000142,
+   "patch": "1.39.4.8",
+   "revision": 8377842,
+   "date": "2023-09-28",
+   "version_date": "Sep 27 2023"
+  },
+  {
+   "client": 2000143,
+   "patch": "1.39.5.0",
+   "revision": 8380576,
+   "date": "2023-09-29",
+   "version_date": "Sep 28 2023"
+  },
+  {
+   "client": 2000144,
+   "patch": "1.39.5.2",
+   "revision": 8383638,
+   "date": "2023-09-29",
+   "version_date": "Sep 29 2023"
+  },
+  {
+   "client": 2000145,
+   "patch": "1.39.5.2",
+   "revision": 8384867,
+   "date": "2023-10-01",
+   "version_date": "Oct 01 2023"
+  },
+  {
+   "client": 2000146,
+   "patch": "1.39.5.4",
+   "revision": 8386764,
+   "date": "2023-10-02",
+   "version_date": "Oct 02 2023"
+  },
+  {
+   "client": 2000149,
+   "patch": "1.39.5.4",
+   "revision": 8391068,
+   "date": "2023-10-04",
+   "version_date": "Oct 03 2023"
+  },
+  {
+   "client": 2000150,
+   "patch": "1.39.5.6",
+   "revision": 8393567,
+   "date": "2023-10-04",
+   "version_date": "Oct 04 2023"
+  },
+  {
+   "client": 2000152,
+   "patch": "1.39.5.8",
+   "revision": 8399471,
+   "date": "2023-10-06",
+   "version_date": "Oct 06 2023"
+  },
+  {
+   "client": 2000155,
+   "patch": "1.39.6.0",
+   "revision": 8404840,
+   "date": "2023-10-10",
+   "version_date": "Oct 09 2023"
+  },
+  {
+   "client": 2000157,
+   "patch": "1.39.6.0",
+   "revision": 8408676,
+   "date": "2023-10-11",
+   "version_date": "Oct 10 2023"
+  },
+  {
+   "client": 2000158,
+   "patch": "1.39.6.0",
+   "revision": 8410378,
+   "date": "2023-10-11",
+   "version_date": "Oct 11 2023"
+  },
+  {
+   "client": 2000163,
+   "patch": "1.39.6.1",
+   "revision": 8414570,
+   "date": "2023-10-12",
+   "version_date": "Oct 12 2023"
+  },
+  {
+   "client": 2000166,
+   "patch": "1.39.6.2",
+   "revision": 8418039,
+   "date": "2023-10-13",
+   "version_date": "Oct 13 2023"
+  },
+  {
+   "client": 2000168,
+   "patch": "1.39.6.3",
+   "revision": 8424509,
+   "date": "2023-10-17",
+   "version_date": "Oct 17 2023"
+  },
+  {
+   "client": 2000170,
+   "patch": "1.39.6.4",
+   "revision": 8430081,
+   "date": "2023-10-19",
+   "version_date": "Oct 19 2023"
+  },
+  {
+   "client": 2000171,
+   "patch": "1.39.6.4",
+   "revision": 8432264,
+   "date": "2023-10-20",
+   "version_date": "Oct 20 2023"
+  },
+  {
+   "client": 2000175,
+   "patch": "1.39.6.5",
+   "revision": 8443630,
+   "date": "2023-10-25",
+   "version_date": "Oct 25 2023"
+  },
+  {
+   "client": 2000177,
+   "patch": "1.39.6.5",
+   "revision": 8446580,
+   "date": "2023-10-26",
+   "version_date": "Oct 26 2023"
+  },
+  {
+   "client": 2000179,
+   "patch": "1.39.6.6",
+   "revision": 8463232,
+   "date": "2023-11-02",
+   "version_date": "Nov 02 2023"
+  },
+  {
+   "client": 2000180,
+   "patch": "1.39.6.6",
+   "revision": 8464644,
+   "date": "2023-11-03",
+   "version_date": "Nov 02 2023"
+  },
+  {
+   "client": 2000181,
+   "patch": "1.39.6.6",
+   "revision": 8468103,
+   "date": "2023-11-03",
+   "version_date": "Nov 03 2023"
+  },
+  {
+   "client": 2000182,
+   "patch": "1.39.6.7",
+   "revision": 8468788,
+   "date": "2023-11-04",
+   "version_date": "Nov 03 2023"
+  },
+  {
+   "client": 2000185,
+   "patch": "1.39.6.7",
+   "revision": 8469347,
+   "date": "2023-11-04",
+   "version_date": "Nov 03 2023"
+  },
+  {
+   "client": 2000186,
+   "patch": "1.39.6.8",
+   "revision": 8480057,
+   "date": "2023-11-09",
+   "version_date": "Nov 08 2023"
+  },
+  {
+   "client": 2000188,
+   "patch": "1.39.6.8",
+   "revision": 8483395,
+   "date": "2023-11-10",
+   "version_date": "Nov 09 2023"
+  },
+  {
+   "client": 2000192,
+   "patch": "1.39.6.9",
+   "revision": 8490682,
+   "date": "2023-11-14",
+   "version_date": "Nov 13 2023"
+  },
+  {
+   "client": 2000196,
+   "patch": "1.39.7.0",
+   "revision": 8504253,
+   "date": "2023-11-17",
+   "version_date": "Nov 16 2023"
+  },
+  {
+   "client": 2000197,
+   "patch": "1.39.7.1",
+   "revision": 8505125,
+   "date": "2023-11-17",
+   "version_date": "Nov 16 2023"
+  },
+  {
+   "client": 2000198,
+   "patch": "1.39.7.1",
+   "revision": 8505273,
+   "date": "2023-11-17",
+   "version_date": "Nov 16 2023"
+  },
+  {
+   "client": 2000200,
+   "patch": "1.39.7.2",
+   "revision": 8508660,
+   "date": "2023-11-17",
+   "version_date": "Nov 17 2023"
+  },
+  {
+   "client": 2000202,
+   "patch": "1.39.7.3",
+   "revision": 8514200,
+   "date": "2023-11-21",
+   "version_date": "Nov 20 2023"
+  },
+  {
+   "client": 2000203,
+   "patch": "1.39.7.4",
+   "revision": 8536105,
+   "date": "2023-11-30",
+   "version_date": "Nov 30 2023"
+  },
+  {
+   "client": 2000204,
+   "patch": "1.39.7.4",
+   "revision": 8540043,
+   "date": "2023-12-01",
+   "version_date": "Dec 01 2023"
+  },
+  {
+   "client": 2000206,
+   "patch": "1.39.7.6",
+   "revision": 8551507,
+   "date": "2023-12-04",
+   "version_date": "Dec 04 2023"
+  },
+  {
+   "client": 2000209,
+   "patch": "1.39.7.8",
+   "revision": 8560667,
+   "date": "2023-12-07",
+   "version_date": "Dec 06 2023"
+  },
+  {
+   "client": 2000211,
+   "patch": "1.39.8.0",
+   "revision": 8564046,
+   "date": "2023-12-07",
+   "version_date": "Dec 07 2023"
+  },
+  {
+   "client": 2000212,
+   "patch": "1.39.8.0",
+   "revision": 8565517,
+   "date": "2023-12-08",
+   "version_date": "Dec 07 2023"
+  },
+  {
+   "client": 2000213,
+   "patch": "1.39.8.0",
+   "revision": 8570559,
+   "date": "2023-12-11",
+   "version_date": "Dec 11 2023"
+  },
+  {
+   "client": 2000215,
+   "patch": "1.39.8.0",
+   "revision": 8572796,
+   "date": "2023-12-12",
+   "version_date": "Dec 11 2023"
+  },
+  {
+   "client": 2000217,
+   "patch": "1.39.8.1",
+   "revision": 8581680,
+   "date": "2023-12-14",
+   "version_date": "Dec 13 2023"
+  },
+  {
+   "client": 2000218,
+   "patch": "1.39.8.1",
+   "revision": 8582451,
+   "date": "2023-12-14",
+   "version_date": "Dec 13 2023"
+  },
+  {
+   "client": 2000219,
+   "patch": "1.39.8.1",
+   "revision": 8582810,
+   "date": "2023-12-14",
+   "version_date": "Dec 13 2023"
+  },
+  {
+   "client": 2000225,
+   "patch": "1.39.8.2",
+   "revision": 8596117,
+   "date": "2023-12-19",
+   "version_date": "Dec 18 2023"
+  },
+  {
+   "client": 2000227,
+   "patch": "1.39.8.3",
+   "revision": 8604444,
+   "date": "2023-12-21",
+   "version_date": "Dec 21 2023"
+  },
+  {
+   "client": 2000228,
+   "patch": "1.39.8.4",
+   "revision": 8614782,
+   "date": "2024-01-04",
+   "version_date": "Jan 04 2024"
+  },
+  {
+   "client": 2000231,
+   "patch": "1.39.8.5",
+   "revision": 8641892,
+   "date": "2024-01-19",
+   "version_date": "Jan 18 2024"
+  },
+  {
+   "client": 2000232,
+   "patch": "1.39.8.5",
+   "revision": 8644140,
+   "date": "2024-01-19",
+   "version_date": "Jan 19 2024"
+  },
+  {
+   "client": 2000233,
+   "patch": "1.39.8.5",
+   "revision": 8645984,
+   "date": "2024-01-22",
+   "version_date": "Jan 22 2024"
+  },
+  {
+   "client": 2000243,
+   "patch": "1.39.8.6",
+   "revision": 8678607,
+   "date": "2024-02-07",
+   "version_date": "Feb 06 2024"
+  },
+  {
+   "client": 2000244,
+   "patch": "1.39.8.7",
+   "revision": 8679798,
+   "date": "2024-02-07",
+   "version_date": "Feb 06 2024"
+  },
+  {
+   "client": 2000245,
+   "patch": "1.39.8.8",
+   "revision": 8682326,
+   "date": "2024-02-08",
+   "version_date": "Feb 07 2024"
+  },
+  {
+   "client": 2000246,
+   "patch": "1.39.8.9",
+   "revision": 8685967,
+   "date": "2024-02-08",
+   "version_date": "Feb 08 2024"
+  },
+  {
+   "client": 2000247,
+   "patch": "1.39.9.0",
+   "revision": 8686845,
+   "date": "2024-02-09",
+   "version_date": "Feb 08 2024"
+  },
+  {
+   "client": 2000249,
+   "patch": "1.39.9.1",
+   "revision": 8692615,
+   "date": "2024-02-13",
+   "version_date": "Feb 12 2024"
+  },
+  {
+   "client": 2000250,
+   "patch": "1.39.9.2",
+   "revision": 8693072,
+   "date": "2024-02-13",
+   "version_date": "Feb 12 2024"
+  },
+  {
+   "client": 2000254,
+   "patch": "1.39.9.2",
+   "revision": 8698806,
+   "date": "2024-02-15",
+   "version_date": "Feb 14 2024"
+  },
+  {
+   "client": 2000255,
+   "patch": "1.39.9.3",
+   "revision": 8701437,
+   "date": "2024-02-16",
+   "version_date": "Feb 15 2024"
+  },
+  {
+   "client": 2000256,
+   "patch": "1.39.9.3",
+   "revision": 8701825,
+   "date": "2024-02-16",
+   "version_date": "Feb 15 2024"
+  },
+  {
+   "client": 2000258,
+   "patch": "1.39.9.4",
+   "revision": 8703952,
+   "date": "2024-02-17",
+   "version_date": "Feb 16 2024"
+  },
+  {
+   "client": 2000259,
+   "patch": "1.39.9.5",
+   "revision": 8733190,
+   "date": "2024-02-28",
+   "version_date": "Feb 28 2024"
+  },
+  {
+   "client": 2000262,
+   "patch": "1.39.9.5",
+   "revision": 8737613,
+   "date": "2024-03-01",
+   "version_date": "Mar 01 2024"
+  },
+  {
+   "client": 2000265,
+   "patch": "1.39.9.5",
+   "revision": 8748805,
+   "date": "2024-03-08",
+   "version_date": "Mar 06 2024"
+  },
+  {
+   "client": 2000266,
+   "patch": "1.39.9.5",
+   "revision": 8754972,
+   "date": "2024-03-09",
+   "version_date": "Mar 08 2024"
+  },
+  {
+   "client": 2000270,
+   "patch": "1.39.9.6",
+   "revision": 8764861,
+   "date": "2024-03-14",
+   "version_date": "Mar 13 2024"
+  },
+  {
+   "client": 2000273,
+   "patch": "1.39.9.7",
+   "revision": 8770782,
+   "date": "2024-03-15",
+   "version_date": "Mar 15 2024"
+  },
+  {
+   "client": 2000274,
+   "patch": "1.39.9.8",
+   "revision": 8772004,
+   "date": "2024-03-16",
+   "version_date": "Mar 16 2024"
+  },
+  {
+   "client": 2000275,
+   "patch": "1.39.9.8",
+   "revision": 8774207,
+   "date": "2024-03-19",
+   "version_date": "Mar 18 2024"
+  },
+  {
+   "client": 2000276,
+   "patch": "1.39.9.9",
+   "revision": 8777114,
+   "date": "2024-03-19",
+   "version_date": "Mar 19 2024"
+  },
+  {
+   "client": 2000278,
+   "patch": "1.40.0.0",
+   "revision": 8780250,
+   "date": "2024-03-21",
+   "version_date": "Mar 20 2024"
+  },
+  {
+   "client": 2000280,
+   "patch": "1.40.0.0",
+   "revision": 8785955,
+   "date": "2024-03-23",
+   "version_date": "Mar 22 2024"
+  },
+  {
+   "client": 2000286,
+   "patch": "1.40.0.1",
+   "revision": 8804653,
+   "date": "2024-04-03",
+   "version_date": "Apr 02 2024"
+  },
+  {
+   "client": 2000287,
+   "patch": "1.40.0.1",
+   "revision": 8805339,
+   "date": "2024-04-03",
+   "version_date": "Apr 03 2024"
+  },
+  {
+   "client": 2000288,
+   "patch": "1.40.0.2",
+   "revision": 8809129,
+   "date": "2024-04-08",
+   "version_date": "Apr 07 2024"
+  },
+  {
+   "client": 2000289,
+   "patch": "1.40.0.2",
+   "revision": 8821541,
+   "date": "2024-04-16",
+   "version_date": "Apr 16 2024"
+  },
+  {
+   "client": 2000295,
+   "patch": "1.40.0.3",
+   "revision": 8838153,
+   "date": "2024-04-23",
+   "version_date": "Apr 22 2024"
+  },
+  {
+   "client": 2000300,
+   "patch": "1.40.0.4",
+   "revision": 8848547,
+   "date": "2024-04-25",
+   "version_date": "Apr 25 2024"
+  },
+  {
+   "client": 2000301,
+   "patch": "1.40.0.4",
+   "revision": 8848995,
+   "date": "2024-04-26",
+   "version_date": "Apr 25 2024"
+  },
+  {
+   "client": 2000303,
+   "patch": "1.40.0.5",
+   "revision": 8852024,
+   "date": "2024-04-26",
+   "version_date": "Apr 26 2024"
+  },
+  {
+   "client": 2000306,
+   "patch": "1.40.0.5",
+   "revision": 8857651,
+   "date": "2024-04-30",
+   "version_date": "Apr 30 2024"
+  },
+  {
+   "client": 2000307,
+   "patch": "1.40.0.5",
+   "revision": 8862284,
+   "date": "2024-05-02",
+   "version_date": "May 01 2024"
+  },
+  {
+   "client": 2000309,
+   "patch": "1.40.0.5",
+   "revision": 8863800,
+   "date": "2024-05-02",
+   "version_date": "May 02 2024"
+  },
+  {
+   "client": 2000310,
+   "patch": "1.40.0.5",
+   "revision": 8864476,
+   "date": "2024-05-02",
+   "version_date": "May 02 2024"
+  },
+  {
+   "client": 2000315,
+   "patch": "1.40.0.6",
+   "revision": 8875729,
+   "date": "2024-05-07",
+   "version_date": "May 07 2024"
+  },
+  {
+   "client": 2000316,
+   "patch": "1.40.0.6",
+   "revision": 8878396,
+   "date": "2024-05-08",
+   "version_date": "May 08 2024"
+  },
+  {
+   "client": 2000317,
+   "patch": "1.40.0.7",
+   "revision": 8880950,
+   "date": "2024-05-09",
+   "version_date": "May 09 2024"
+  },
+  {
+   "client": 2000318,
+   "patch": "1.40.0.8",
+   "revision": 8881868,
+   "date": "2024-05-09",
+   "version_date": "May 09 2024"
+  },
+  {
+   "client": 2000322,
+   "patch": "1.40.0.8",
+   "revision": 8912510,
+   "date": "2024-05-23",
+   "version_date": "May 21 2024"
+  },
+  {
+   "client": 2000327,
+   "patch": "1.40.0.9",
+   "revision": 8921207,
+   "date": "2024-05-23",
+   "version_date": "May 23 2024"
+  },
+  {
+   "client": 2000330,
+   "patch": "1.40.1.0",
+   "revision": 8926243,
+   "date": "2024-05-24",
+   "version_date": "May 24 2024"
+  },
+  {
+   "client": 2000332,
+   "patch": "1.40.1.1",
+   "revision": 8934866,
+   "date": "2024-05-29",
+   "version_date": "May 29 2024"
+  },
+  {
+   "client": 2000333,
+   "patch": "1.40.1.1",
+   "revision": 8940079,
+   "date": "2024-05-31",
+   "version_date": "May 30 2024"
+  },
+  {
+   "client": 2000335,
+   "patch": "1.40.1.2",
+   "revision": 8947563,
+   "date": "2024-06-04",
+   "version_date": "Jun 04 2024"
+  },
+  {
+   "client": 2000342,
+   "patch": "1.40.1.3",
+   "revision": 8963560,
+   "date": "2024-06-10",
+   "version_date": "Jun 10 2024"
+  },
+  {
+   "client": 2000343,
+   "patch": "1.40.1.3",
+   "revision": 8964309,
+   "date": "2024-06-11",
+   "version_date": "Jun 10 2024"
+  },
+  {
+   "client": 2000344,
+   "patch": "1.40.1.4",
+   "revision": 8966565,
+   "date": "2024-06-11",
+   "version_date": "Jun 11 2024"
+  },
+  {
+   "client": 2000345,
+   "patch": "1.40.1.5",
+   "revision": 8972962,
+   "date": "2024-06-14",
+   "version_date": "Jun 13 2024"
+  },
+  {
+   "client": 2000348,
+   "patch": "1.40.1.5",
+   "revision": 8980064,
+   "date": "2024-06-18",
+   "version_date": "Jun 17 2024"
+  },
+  {
+   "client": 2000354,
+   "patch": "1.40.1.6",
+   "revision": 8989727,
+   "date": "2024-06-20",
+   "version_date": "Jun 20 2024"
+  },
+  {
+   "client": 2000359,
+   "patch": "1.40.1.6",
+   "revision": 8998896,
+   "date": "2024-06-25",
+   "version_date": "Jun 25 2024"
+  },
+  {
+   "client": 2000361,
+   "patch": "1.40.1.7",
+   "revision": 8999309,
+   "date": "2024-06-25",
+   "version_date": "Jun 25 2024"
+  },
+  {
+   "client": 2000362,
+   "patch": "1.40.1.8",
+   "revision": 9002549,
+   "date": "2024-06-26",
+   "version_date": "Jun 26 2024"
+  },
+  {
+   "client": 2000363,
+   "patch": "1.40.1.8",
+   "revision": 9003188,
+   "date": "2024-06-26",
+   "version_date": "Jun 26 2024"
+  },
+  {
+   "client": 2000365,
+   "patch": "1.40.1.9",
+   "revision": 9006241,
+   "date": "2024-06-27",
+   "version_date": "Jun 27 2024"
+  },
+  {
+   "client": 2000366,
+   "patch": "1.40.2.0",
+   "revision": 9014845,
+   "date": "2024-07-02",
+   "version_date": "Jul 02 2024"
+  },
+  {
+   "client": 2000367,
+   "patch": "1.40.2.1",
+   "revision": 9034942,
+   "date": "2024-07-12",
+   "version_date": "Jul 11 2024"
+  },
+  {
+   "client": 2000368,
+   "patch": "1.40.2.1",
+   "revision": 9035763,
+   "date": "2024-07-12",
+   "version_date": "Jul 11 2024"
+  },
+  {
+   "client": 2000370,
+   "patch": "1.40.2.2",
+   "revision": 9046990,
+   "date": "2024-07-18",
+   "version_date": "Jul 17 2024"
+  },
+  {
+   "client": 2000373,
+   "patch": "1.40.2.3",
+   "revision": 9056573,
+   "date": "2024-07-23",
+   "version_date": "Jul 22 2024"
+  },
+  {
+   "client": 2000376,
+   "patch": "1.40.2.3",
+   "revision": 9065849,
+   "date": "2024-07-25",
+   "version_date": "Jul 25 2024"
+  },
+  {
+   "client": 2000380,
+   "patch": "1.40.2.4",
+   "revision": 9100480,
+   "date": "2024-08-08",
+   "version_date": "Aug 08 2024"
+  },
+  {
+   "client": 2000381,
+   "patch": "1.40.2.5",
+   "revision": 9101833,
+   "date": "2024-08-09",
+   "version_date": "Aug 08 2024"
+  },
+  {
+   "client": 2000382,
+   "patch": "1.40.2.5",
+   "revision": 9103257,
+   "date": "2024-08-09",
+   "version_date": "Aug 09 2024"
+  },
+  {
+   "client": 2000384,
+   "patch": "1.40.2.6",
+   "revision": 9111640,
+   "date": "2024-08-14",
+   "version_date": "Aug 14 2024"
+  },
+  {
+   "client": 2000385,
+   "patch": "1.40.2.7",
+   "revision": 9122633,
+   "date": "2024-08-19",
+   "version_date": "Aug 19 2024"
+  },
+  {
+   "client": 2000388,
+   "patch": "1.40.2.8",
+   "revision": 9126054,
+   "date": "2024-08-20",
+   "version_date": "Aug 20 2024"
+  },
+  {
+   "client": 2000390,
+   "patch": "1.40.2.9",
+   "revision": 9129525,
+   "date": "2024-08-21",
+   "version_date": "Aug 21 2024"
+  },
+  {
+   "client": 2000391,
+   "patch": "1.40.2.9",
+   "revision": 9131964,
+   "date": "2024-08-22",
+   "version_date": "Aug 22 2024"
+  },
+  {
+   "client": 2000394,
+   "patch": "1.40.3.0",
+   "revision": 9157095,
+   "date": "2024-09-03",
+   "version_date": "Sep 03 2024"
+  },
+  {
+   "client": 2000398,
+   "patch": "1.40.3.0",
+   "revision": 9170797,
+   "date": "2024-09-09",
+   "version_date": "Sep 09 2024"
+  },
+  {
+   "client": 2000399,
+   "patch": "1.40.3.0",
+   "revision": 9173482,
+   "date": "2024-09-10",
+   "version_date": "Sep 10 2024"
+  },
+  {
+   "client": 2000404,
+   "patch": "1.40.3.1",
+   "revision": 9227395,
+   "date": "2024-10-02",
+   "version_date": "Oct 02 2024"
+  },
+  {
+   "client": 2000405,
+   "patch": "1.40.3.1",
+   "revision": 9228544,
+   "date": "2024-10-03",
+   "version_date": "Oct 02 2024"
+  },
+  {
+   "client": 2000406,
+   "patch": "1.40.3.2",
+   "revision": 9231159,
+   "date": "2024-10-04",
+   "version_date": "Oct 03 2024"
+  },
+  {
+   "client": 2000407,
+   "patch": "1.40.3.3",
+   "revision": 9234295,
+   "date": "2024-10-05",
+   "version_date": "Oct 04 2024"
+  },
+  {
+   "client": 2000408,
+   "patch": "1.40.3.4",
+   "revision": 9235676,
+   "date": "2024-10-06",
+   "version_date": "Oct 06 2024"
+  },
+  {
+   "client": 2000409,
+   "patch": "1.40.3.5",
+   "revision": 9241865,
+   "date": "2024-10-09",
+   "version_date": "Oct 08 2024"
+  },
+  {
+   "client": 2000411,
+   "patch": "1.40.3.6",
+   "revision": 9244864,
+   "date": "2024-10-09",
+   "version_date": "Oct 09 2024"
+  },
+  {
+   "client": 2000412,
+   "patch": "1.40.3.6",
+   "revision": 9248810,
+   "date": "2024-10-10",
+   "version_date": "Oct 10 2024"
+  },
+  {
+   "client": 2000413,
+   "patch": "1.40.3.6",
+   "revision": 9251811,
+   "date": "2024-10-11",
+   "version_date": "Oct 11 2024"
+  },
+  {
+   "client": 2000415,
+   "patch": "1.40.3.7",
+   "revision": 9260410,
+   "date": "2024-10-15",
+   "version_date": "Oct 15 2024"
+  },
+  {
+   "client": 2000416,
+   "patch": "1.40.3.7",
+   "revision": 9261181,
+   "date": "2024-10-16",
+   "version_date": "Oct 15 2024"
+  },
+  {
+   "client": 2000417,
+   "patch": "1.40.3.8",
+   "revision": 9263685,
+   "date": "2024-10-16",
+   "version_date": "Oct 16 2024"
+  },
+  {
+   "client": 2000418,
+   "patch": "1.40.3.9",
+   "revision": 9267356,
+   "date": "2024-10-17",
+   "version_date": "Oct 17 2024"
+  },
+  {
+   "client": 2000421,
+   "patch": "1.40.4.0",
+   "revision": 9282955,
+   "date": "2024-10-23",
+   "version_date": "Oct 23 2024"
+  },
+  {
+   "client": 2000422,
+   "patch": "1.40.4.1",
+   "revision": 9287444,
+   "date": "2024-10-24",
+   "version_date": "Oct 24 2024"
+  },
+  {
+   "client": 2000423,
+   "patch": "1.40.4.2",
+   "revision": 9290176,
+   "date": "2024-10-25",
+   "version_date": "Oct 25 2024"
+  },
+  {
+   "client": 2000424,
+   "patch": "1.40.4.3",
+   "revision": 9296979,
+   "date": "2024-10-29",
+   "version_date": "Oct 28 2024"
+  },
+  {
+   "client": 2000425,
+   "patch": "1.40.4.4",
+   "revision": 9300165,
+   "date": "2024-10-30",
+   "version_date": "Oct 29 2024"
+  },
+  {
+   "client": 2000426,
+   "patch": "1.40.4.5",
+   "revision": 9303172,
+   "date": "2024-10-30",
+   "version_date": "Oct 30 2024"
+  },
+  {
+   "client": 2000432,
+   "patch": "1.40.4.6",
+   "revision": 9322691,
+   "date": "2024-11-07",
+   "version_date": "Nov 06 2024"
+  },
+  {
+   "client": 2000433,
+   "patch": "1.40.4.6",
+   "revision": 9325342,
+   "date": "2024-11-07",
+   "version_date": "Nov 07 2024"
+  },
+  {
+   "client": 2000434,
+   "patch": "1.40.4.7",
+   "revision": 9326903,
+   "date": "2024-11-07",
+   "version_date": "Nov 07 2024"
+  },
+  {
+   "client": 2000438,
+   "patch": "1.40.4.8",
+   "revision": 9339427,
+   "date": "2024-11-12",
+   "version_date": "Nov 12 2024"
+  },
+  {
+   "client": 2000442,
+   "patch": "1.40.4.9",
+   "revision": 9344018,
+   "date": "2024-11-13",
+   "version_date": "Nov 13 2024"
+  },
+  {
+   "client": 2000443,
+   "patch": "1.40.5.0",
+   "revision": 9347743,
+   "date": "2024-11-14",
+   "version_date": "Nov 14 2024"
+  },
+  {
+   "client": 2000444,
+   "patch": "1.40.5.1",
+   "revision": 9350726,
+   "date": "2024-11-15",
+   "version_date": "Nov 15 2024"
+  },
+  {
+   "client": 2000445,
+   "patch": "1.40.5.1",
+   "revision": 9352479,
+   "date": "2024-11-16",
+   "version_date": "Nov 16 2024"
+  },
+  {
+   "client": 2000447,
+   "patch": "1.40.5.2",
+   "revision": 9358701,
+   "date": "2024-11-20",
+   "version_date": "Nov 19 2024"
+  },
+  {
+   "client": 2000449,
+   "patch": "1.40.5.3",
+   "revision": 9361747,
+   "date": "2024-11-21",
+   "version_date": "Nov 20 2024"
+  },
+  {
+   "client": 2000453,
+   "patch": "1.40.5.4",
+   "revision": 9378237,
+   "date": "2024-11-27",
+   "version_date": "Nov 27 2024"
+  },
+  {
+   "client": 2000455,
+   "patch": "1.40.5.4",
+   "revision": 9378757,
+   "date": "2024-11-27",
+   "version_date": "Nov 27 2024"
+  },
+  {
+   "client": 2000456,
+   "patch": "1.40.5.5",
+   "revision": 9385448,
+   "date": "2024-12-03",
+   "version_date": "Dec 03 2024"
+  },
+  {
+   "client": 2000458,
+   "patch": "1.40.5.5",
+   "revision": 9401092,
+   "date": "2024-12-10",
+   "version_date": "Dec 09 2024"
+  },
+  {
+   "client": 2000459,
+   "patch": "1.40.5.6",
+   "revision": 9425414,
+   "date": "2024-12-19",
+   "version_date": "Dec 18 2024"
+  },
+  {
+   "client": 2000460,
+   "patch": "1.40.5.7",
+   "revision": 9428259,
+   "date": "2024-12-19",
+   "version_date": "Dec 19 2024"
+  },
+  {
+   "client": 2000465,
+   "patch": "1.40.5.8",
+   "revision": 9443894,
+   "date": "2025-01-07",
+   "version_date": "Jan 07 2025"
+  },
+  {
+   "client": 2000468,
+   "patch": "1.40.5.9",
+   "revision": 9449802,
+   "date": "2025-01-10",
+   "version_date": "Jan 09 2025"
+  },
+  {
+   "client": 2000471,
+   "patch": "1.40.6.0",
+   "revision": 9459304,
+   "date": "2025-01-15",
+   "version_date": "Jan 14 2025"
+  },
+  {
+   "client": 2000474,
+   "patch": "1.40.6.1",
+   "revision": 9465099,
+   "date": "2025-01-17",
+   "version_date": "Jan 16 2025"
+  },
+  {
+   "client": 2000475,
+   "patch": "1.40.6.2",
+   "revision": 9475745,
+   "date": "2025-01-22",
+   "version_date": "Jan 21 2025"
+  },
+  {
+   "client": 2000476,
+   "patch": "1.40.6.3",
+   "revision": 9487157,
+   "date": "2025-01-28",
+   "version_date": "Jan 27 2025"
+  },
+  {
+   "client": 2000478,
+   "patch": "1.40.6.4",
+   "revision": 9491722,
+   "date": "2025-01-28",
+   "version_date": "Jan 28 2025"
+  },
+  {
+   "client": 2000479,
+   "patch": "1.40.6.5",
+   "revision": 9497219,
+   "date": "2025-01-30",
+   "version_date": "Jan 29 2025"
+  },
+  {
+   "client": 2000481,
+   "patch": "1.40.6.6",
+   "revision": 9508088,
+   "date": "2025-02-04",
+   "version_date": "Feb 03 2025"
+  },
+  {
+   "client": 2000482,
+   "patch": "1.40.6.7",
+   "revision": 9518005,
+   "date": "2025-02-06",
+   "version_date": "Feb 06 2025"
+  },
+  {
+   "client": 2000483,
+   "patch": "1.40.6.8",
+   "revision": 9535464,
+   "date": "2025-02-13",
+   "version_date": "Feb 13 2025"
+  },
+  {
+   "client": 2000487,
+   "patch": "1.40.6.9",
+   "revision": 9554626,
+   "date": "2025-02-21",
+   "version_date": "Feb 21 2025"
+  },
+  {
+   "client": 2000490,
+   "patch": "1.40.7.0",
+   "revision": 9569858,
+   "date": "2025-02-28",
+   "version_date": "Feb 27 2025"
+  },
+  {
+   "client": 2000495,
+   "patch": "1.40.7.1",
+   "revision": 9577137,
+   "date": "2025-03-04",
+   "version_date": "Mar 03 2025"
+  },
+  {
+   "client": 2000496,
+   "patch": "1.40.7.1",
+   "revision": 9580756,
+   "date": "2025-03-04",
+   "version_date": "Mar 04 2025"
+  },
+  {
+   "client": 2000497,
+   "patch": "1.40.7.1",
+   "revision": 9596763,
+   "date": "2025-03-11",
+   "version_date": "Mar 11 2025"
+  },
+  {
+   "client": 2000498,
+   "patch": "1.40.7.1",
+   "revision": 9600860,
+   "date": "2025-03-12",
+   "version_date": "Mar 12 2025"
+  },
+  {
+   "client": 2000499,
+   "patch": "1.40.7.1",
+   "revision": 9607577,
+   "date": "2025-03-14",
+   "version_date": "Mar 14 2025"
+  },
+  {
+   "client": 2000501,
+   "patch": "1.40.7.2",
+   "revision": 9621068,
+   "date": "2025-03-20",
+   "version_date": "Mar 20 2025"
+  },
+  {
+   "client": 2000509,
+   "patch": "1.40.7.3",
+   "revision": 9646968,
+   "date": "2025-03-31",
+   "version_date": "Mar 31 2025"
+  },
+  {
+   "client": 2000510,
+   "patch": "1.40.7.4",
+   "revision": 9647706,
+   "date": "2025-04-01",
+   "version_date": "Mar 31 2025"
+  },
+  {
+   "client": 2000511,
+   "patch": "1.40.7.4",
+   "revision": 9650583,
+   "date": "2025-04-02",
+   "version_date": "Apr 01 2025"
+  },
+  {
+   "client": 2000514,
+   "patch": "1.40.7.4",
+   "revision": 9683751,
+   "date": "2025-04-21",
+   "version_date": "Apr 21 2025"
+  },
+  {
+   "client": 2000521,
+   "patch": "1.40.7.5",
+   "revision": 9725612,
+   "date": "2025-05-07",
+   "version_date": "May 07 2025"
+  },
+  {
+   "client": 2000522,
+   "patch": "1.40.7.5",
+   "revision": 9727022,
+   "date": "2025-05-08",
+   "version_date": "May 07 2025"
+  },
+  {
+   "client": 2000523,
+   "patch": "1.40.7.6",
+   "revision": 9730680,
+   "date": "2025-05-08",
+   "version_date": "May 08 2025"
+  },
+  {
+   "client": 2000524,
+   "patch": "1.40.7.6",
+   "revision": 9732124,
+   "date": "2025-05-09",
+   "version_date": "May 08 2025"
+  },
+  {
+   "client": 2000525,
+   "patch": "1.40.7.7",
+   "revision": 9739186,
+   "date": "2025-05-13",
+   "version_date": "May 12 2025"
+  },
+  {
+   "client": 2000526,
+   "patch": "1.40.7.8",
+   "revision": 9742902,
+   "date": "2025-05-13",
+   "version_date": "May 13 2025"
+  },
+  {
+   "client": 2000527,
+   "patch": "1.40.7.8",
+   "revision": 9745137,
+   "date": "2025-05-14",
+   "version_date": "May 14 2025"
+  },
+  {
+   "client": 2000528,
+   "patch": "1.40.7.9",
+   "revision": 9750814,
+   "date": "2025-05-15",
+   "version_date": "May 15 2025"
+  },
+  {
+   "client": 2000530,
+   "patch": "1.40.8.0",
+   "revision": 9758577,
+   "date": "2025-05-19",
+   "version_date": "May 19 2025"
+  },
+  {
+   "client": 2000532,
+   "patch": "1.40.8.1",
+   "revision": 9767434,
+   "date": "2025-05-21",
+   "version_date": "May 21 2025"
+  },
+  {
+   "client": 2000534,
+   "patch": "1.40.8.2",
+   "revision": 9772149,
+   "date": "2025-05-23",
+   "version_date": "May 22 2025"
+  },
+  {
+   "client": 2000535,
+   "patch": "1.40.8.2",
+   "revision": 9774016,
+   "date": "2025-05-23",
+   "version_date": "May 22 2025"
+  },
+  {
+   "client": 2000537,
+   "patch": "1.40.8.3",
+   "revision": 9792344,
+   "date": "2025-05-29",
+   "version_date": "May 29 2025"
+  },
+  {
+   "client": 2000538,
+   "patch": "1.40.8.3",
+   "revision": 9799604,
+   "date": "2025-06-02",
+   "version_date": "Jun 02 2025"
+  },
+  {
+   "client": 2000540,
+   "patch": "1.40.8.3",
+   "revision": 9803624,
+   "date": "2025-06-04",
+   "version_date": "Jun 03 2025"
+  },
+  {
+   "client": 2000542,
+   "patch": "1.40.8.4",
+   "revision": 9820237,
+   "date": "2025-06-10",
+   "version_date": "Jun 10 2025"
+  },
+  {
+   "client": 2000554,
+   "patch": "1.40.8.5",
+   "revision": 9873908,
+   "date": "2025-07-02",
+   "version_date": "Jul 02 2025"
+  },
+  {
+   "client": 2000555,
+   "patch": "1.40.8.5",
+   "revision": 9875185,
+   "date": "2025-07-02",
+   "version_date": "Jul 02 2025"
+  },
+  {
+   "client": 2000558,
+   "patch": "1.40.8.6",
+   "revision": 9877368,
+   "date": "2025-07-03",
+   "version_date": "Jul 03 2025"
+  },
+  {
+   "client": 2000559,
+   "patch": "1.40.8.6",
+   "revision": 9881803,
+   "date": "2025-07-07",
+   "version_date": "Jul 07 2025"
+  },
+  {
+   "client": 2000560,
+   "patch": "1.40.8.6",
+   "revision": 9897532,
+   "date": "2025-07-15",
+   "version_date": "Jul 14 2025"
+  },
+  {
+   "client": 2000564,
+   "patch": "1.40.8.7",
+   "revision": 9901276,
+   "date": "2025-07-16",
+   "version_date": "Jul 15 2025"
+  },
+  {
+   "client": 2000566,
+   "patch": "1.40.8.8",
+   "revision": 9902467,
+   "date": "2025-07-16",
+   "version_date": "Jul 15 2025"
+  },
+  {
+   "client": 2000568,
+   "patch": "1.40.8.8",
+   "revision": 9904229,
+   "date": "2025-07-16",
+   "version_date": "Jul 16 2025"
+  },
+  {
+   "client": 2000577,
+   "patch": "1.40.8.9",
+   "revision": 9931810,
+   "date": "2025-07-28",
+   "version_date": "Jul 28 2025"
+  },
+  {
+   "client": 2000579,
+   "patch": "1.40.9.0",
+   "revision": 9933935,
+   "date": "2025-07-29",
+   "version_date": "Jul 28 2025"
+  },
+  {
+   "client": 2000583,
+   "patch": "1.40.9.1",
+   "revision": 9937313,
+   "date": "2025-07-30",
+   "version_date": "Jul 29 2025"
+  },
+  {
+   "client": 2000585,
+   "patch": "1.40.9.2",
+   "revision": 9940826,
+   "date": "2025-07-31",
+   "version_date": "Jul 30 2025"
+  },
+  {
+   "client": 2000587,
+   "patch": "1.40.9.4",
+   "revision": 9946454,
+   "date": "2025-08-01",
+   "version_date": "Aug 01 2025"
+  },
+  {
+   "client": 2000597,
+   "patch": "1.40.9.5",
+   "revision": 9978078,
+   "date": "2025-08-14",
+   "version_date": "Aug 14 2025"
+  },
+  {
+   "client": 2000598,
+   "patch": "1.40.9.5",
+   "revision": 9979182,
+   "date": "2025-08-14",
+   "version_date": "Aug 14 2025"
+  },
+  {
+   "client": 2000599,
+   "patch": "1.40.9.6",
+   "revision": 9989748,
+   "date": "2025-08-18",
+   "version_date": "Aug 18 2025"
+  },
+  {
+   "client": 2000600,
+   "patch": "1.40.9.6",
+   "revision": 9995100,
+   "date": "2025-08-19",
+   "version_date": "Aug 19 2025"
+  },
+  {
+   "client": 2000603,
+   "patch": "1.40.9.7",
+   "revision": 10018582,
+   "date": "2025-08-26",
+   "version_date": "Aug 26 2025"
+  },
+  {
+   "client": 2000606,
+   "patch": "1.40.9.8",
+   "revision": 10022064,
+   "date": "2025-08-27",
+   "version_date": "Aug 27 2025"
+  },
+  {
+   "client": 2000609,
+   "patch": "1.40.9.9",
+   "revision": 10038669,
+   "date": "2025-09-03",
+   "version_date": "Sep 03 2025"
+  },
+  {
+   "client": 2000614,
+   "patch": "1.41.0.0",
+   "revision": 10046801,
+   "date": "2025-09-06",
+   "version_date": "Sep 05 2025"
+  },
+  {
+   "client": 2000615,
+   "patch": "1.41.0.1",
+   "revision": 10051122,
+   "date": "2025-09-08",
+   "version_date": "Sep 08 2025"
+  },
+  {
+   "client": 2000616,
+   "patch": "1.41.0.2",
+   "revision": 10054168,
+   "date": "2025-09-09",
+   "version_date": "Sep 09 2025"
+  },
+  {
+   "client": 2000618,
+   "patch": "1.41.0.3",
+   "revision": 10057816,
+   "date": "2025-09-10",
+   "version_date": "Sep 10 2025"
+  },
+  {
+   "client": 2000624,
+   "patch": "1.41.0.4",
+   "revision": 10074586,
+   "date": "2025-09-16",
+   "version_date": "Sep 16 2025"
+  },
+  {
+   "client": 2000625,
+   "patch": "1.41.0.4",
+   "revision": 10075137,
+   "date": "2025-09-17",
+   "version_date": "Sep 16 2025"
+  },
+  {
+   "client": 2000626,
+   "patch": "1.41.0.4",
+   "revision": 10075575,
+   "date": "2025-09-17",
+   "version_date": "Sep 16 2025"
+  },
+  {
+   "client": 2000628,
+   "patch": "1.41.0.4",
+   "revision": 10075749,
+   "date": "2025-09-17",
+   "version_date": "Sep 16 2025"
+  },
+  {
+   "client": 2000631,
+   "patch": "1.41.0.5",
+   "revision": 10078199,
+   "date": "2025-09-17",
+   "version_date": "Sep 17 2025"
+  },
+  {
+   "client": 2000632,
+   "patch": "1.41.0.5",
+   "revision": 10078864,
+   "date": "2025-09-18",
+   "version_date": "Sep 17 2025"
+  },
+  {
+   "client": 2000634,
+   "patch": "1.41.0.5",
+   "revision": 10082503,
+   "date": "2025-09-19",
+   "version_date": "Sep 18 2025"
+  },
+  {
+   "client": 2000635,
+   "patch": "1.41.0.6",
+   "revision": 10082634,
+   "date": "2025-09-19",
+   "version_date": "Sep 18 2025"
+  },
+  {
+   "client": 2000637,
+   "patch": "1.41.0.6",
+   "revision": 10089345,
+   "date": "2025-09-23",
+   "version_date": "Sep 22 2025"
+  },
+  {
+   "client": 2000640,
+   "patch": "1.41.0.7",
+   "revision": 10092557,
+   "date": "2025-09-24",
+   "version_date": "Sep 23 2025"
+  },
+  {
+   "client": 2000641,
+   "patch": "1.41.0.7",
+   "revision": 10095088,
+   "date": "2025-09-25",
+   "version_date": "Sep 24 2025"
+  },
+  {
+   "client": 2000642,
+   "patch": "1.41.0.8",
+   "revision": 10098954,
+   "date": "2025-09-26",
+   "version_date": "Sep 25 2025"
+  },
+  {
+   "client": 2000643,
+   "patch": "1.41.0.8",
+   "revision": 10099378,
+   "date": "2025-09-26",
+   "version_date": "Sep 25 2025"
+  },
+  {
+   "client": 2000646,
+   "patch": "1.41.0.9",
+   "revision": 10115198,
+   "date": "2025-10-01",
+   "version_date": "Oct 01 2025"
+  },
+  {
+   "client": 2000647,
+   "patch": "1.41.0.9",
+   "revision": 10115791,
+   "date": "2025-10-02",
+   "version_date": "Oct 01 2025"
+  },
+  {
+   "client": 2000648,
+   "patch": "1.41.1.0",
+   "revision": 10118989,
+   "date": "2025-10-02",
+   "version_date": "Oct 02 2025"
+  },
+  {
+   "client": 2000650,
+   "patch": "1.41.1.1",
+   "revision": 10122461,
+   "date": "2025-10-03",
+   "version_date": "Oct 03 2025"
+  },
+  {
+   "client": 2000651,
+   "patch": "1.41.1.2",
+   "revision": 10126305,
+   "date": "2025-10-06",
+   "version_date": "Oct 06 2025"
+  },
+  {
+   "client": 2000653,
+   "patch": "1.41.1.3",
+   "revision": 10147720,
+   "date": "2025-10-14",
+   "version_date": "Oct 14 2025"
+  },
+  {
+   "client": 2000654,
+   "patch": "1.41.1.4",
+   "revision": 10152403,
+   "date": "2025-10-16",
+   "version_date": "Oct 15 2025"
+  },
+  {
+   "client": 2000655,
+   "patch": "1.41.1.4",
+   "revision": 10159189,
+   "date": "2025-10-17",
+   "version_date": "Oct 17 2025"
+  },
+  {
+   "client": 2000659,
+   "patch": "1.41.1.5",
+   "revision": 10172159,
+   "date": "2025-10-22",
+   "version_date": "Oct 22 2025"
+  },
+  {
+   "client": 2000660,
+   "patch": "1.41.1.5",
+   "revision": 10172732,
+   "date": "2025-10-22",
+   "version_date": "Oct 22 2025"
+  },
+  {
+   "client": 2000661,
+   "patch": "1.41.1.5",
+   "revision": 10173123,
+   "date": "2025-10-23",
+   "version_date": "Oct 22 2025"
+  },
+  {
+   "client": 2000662,
+   "patch": "1.41.1.6",
+   "revision": 10175273,
+   "date": "2025-10-23",
+   "version_date": "Oct 23 2025"
+  },
+  {
+   "client": 2000663,
+   "patch": "1.41.1.6",
+   "revision": 10179470,
+   "date": "2025-10-24",
+   "version_date": "Oct 24 2025"
+  },
+  {
+   "client": 2000664,
+   "patch": "1.41.1.7",
+   "revision": 10179758,
+   "date": "2025-10-24",
+   "version_date": "Oct 24 2025"
+  },
+  {
+   "client": 2000666,
+   "patch": "1.41.1.9",
+   "revision": 10191626,
+   "date": "2025-10-29",
+   "version_date": "Oct 29 2025"
+  },
+  {
+   "client": 2000670,
+   "patch": "1.41.2.1",
+   "revision": 10205455,
+   "date": "2025-11-04",
+   "version_date": "Nov 04 2025"
+  },
+  {
+   "client": 2000673,
+   "patch": "1.41.2.2",
+   "revision": 10230890,
+   "date": "2025-11-12",
+   "version_date": "Nov 12 2025"
+  },
+  {
+   "client": 2000675,
+   "patch": "1.41.2.3",
+   "revision": 10231750,
+   "date": "2025-11-13",
+   "version_date": "Nov 12 2025"
+  },
+  {
+   "client": 2000676,
+   "patch": "1.41.2.4",
+   "revision": 10232357,
+   "date": "2025-11-13",
+   "version_date": "Nov 12 2025"
+  },
+  {
+   "client": 2000678,
+   "patch": "1.41.2.5",
+   "revision": 10234901,
+   "date": "2025-11-14",
+   "version_date": "Nov 13 2025"
+  },
+  {
+   "client": 2000680,
+   "patch": "1.41.2.5",
+   "revision": 10247120,
+   "date": "2025-11-19",
+   "version_date": "Nov 18 2025"
+  },
+  {
+   "client": 2000681,
+   "patch": "1.41.2.6",
+   "revision": 10249265,
+   "date": "2025-11-19",
+   "version_date": "Nov 19 2025"
+  },
+  {
+   "client": 2000682,
+   "patch": "1.41.2.6",
+   "revision": 10257343,
+   "date": "2025-11-21",
+   "version_date": "Nov 21 2025"
+  },
+  {
+   "client": 2000685,
+   "patch": "1.41.2.6",
+   "revision": 10266417,
+   "date": "2025-11-25",
+   "version_date": "Nov 25 2025"
+  },
+  {
+   "client": 2000688,
+   "patch": "1.41.2.6",
+   "revision": 10291640,
+   "date": "2025-12-06",
+   "version_date": "Dec 05 2025"
+  },
+  {
+   "client": 2000691,
+   "patch": "1.41.2.7",
+   "revision": 10296103,
+   "date": "2025-12-08",
+   "version_date": "Dec 08 2025"
+  },
+  {
+   "client": 2000692,
+   "patch": "1.41.2.7",
+   "revision": 10296588,
+   "date": "2025-12-08",
+   "version_date": "Dec 08 2025"
+  },
+  {
+   "client": 2000696,
+   "patch": "1.41.2.8",
+   "revision": 10299884,
+   "date": "2025-12-09",
+   "version_date": "Dec 09 2025"
+  },
+  {
+   "client": 2000699,
+   "patch": "1.41.2.9",
+   "revision": 10325883,
+   "date": "2025-12-18",
+   "version_date": "Dec 17 2025"
+  },
+  {
+   "client": 2000700,
+   "patch": "1.41.2.9",
+   "revision": 10329521,
+   "date": "2025-12-18",
+   "version_date": "Dec 18 2025"
+  },
+  {
+   "client": 2000701,
+   "patch": "1.41.2.9",
+   "revision": 10343799,
+   "date": "2026-01-06",
+   "version_date": "Jan 05 2026"
+  },
+  {
+   "client": 2000702,
+   "patch": "1.41.2.9",
+   "revision": 10348695,
+   "date": "2026-01-07",
+   "version_date": "Jan 07 2026"
+  },
+  {
+   "client": 2000704,
+   "patch": "1.41.2.9",
+   "revision": 10371793,
+   "date": "2026-01-20",
+   "version_date": "Jan 16 2026"
+  },
+  {
+   "client": 2000713,
+   "patch": "1.41.3.0",
+   "revision": 10386825,
+   "date": "2026-01-21",
+   "version_date": "Jan 21 2026"
+  },
+  {
+   "client": 2000714,
+   "patch": "1.41.3.1",
+   "revision": 10388130,
+   "date": "2026-01-22",
+   "version_date": "Jan 21 2026"
+  },
+  {
+   "client": 2000715,
+   "patch": "1.41.3.1",
+   "revision": 10388470,
+   "date": "2026-01-22",
+   "version_date": "Jan 21 2026"
+  },
+  {
+   "client": 2000718,
+   "patch": "1.41.3.2",
+   "revision": 10392542,
+   "date": "2026-01-22",
+   "version_date": "Jan 22 2026"
+  },
+  {
+   "client": 2000719,
+   "patch": "1.41.3.2",
+   "revision": 10396824,
+   "date": "2026-01-24",
+   "version_date": "Jan 23 2026"
+  },
+  {
+   "client": 2000722,
+   "patch": "1.41.3.3",
+   "revision": 10401984,
+   "date": "2026-01-27",
+   "version_date": "Jan 26 2026"
+  },
+  {
+   "client": 2000723,
+   "patch": "1.41.3.3",
+   "revision": 10403702,
+   "date": "2026-01-27",
+   "version_date": "Jan 27 2026"
+  },
+  {
+   "client": 2000726,
+   "patch": "1.41.3.4",
+   "revision": 10413151,
+   "date": "2026-01-30",
+   "version_date": "Jan 29 2026"
+  },
+  {
+   "client": 2000728,
+   "patch": "1.41.3.5",
+   "revision": 10426673,
+   "date": "2026-02-04",
+   "version_date": "Feb 04 2026"
+  },
+  {
+   "client": 2000729,
+   "patch": "1.41.3.5",
+   "revision": 10437851,
+   "date": "2026-02-09",
+   "version_date": "Feb 09 2026"
+  },
+  {
+   "client": 2000730,
+   "patch": "1.41.3.5",
+   "revision": 10439835,
+   "date": "2026-02-10",
+   "version_date": "Feb 10 2026"
+  },
+  {
+   "client": 2000735,
+   "patch": "1.41.3.6",
+   "revision": 10470435,
+   "date": "2026-02-23",
+   "version_date": "Feb 23 2026"
+  },
+  {
+   "client": 2000738,
+   "patch": "1.41.3.7",
+   "revision": 10477407,
+   "date": "2026-02-25",
+   "version_date": "Feb 25 2026"
+  },
+  {
+   "client": 2000744,
+   "patch": "1.41.3.8",
+   "revision": 10494140,
+   "date": "2026-03-04",
+   "version_date": "Mar 04 2026"
+  },
+  {
+   "client": 2000745,
+   "patch": "1.41.3.8",
+   "revision": 10497890,
+   "date": "2026-03-05",
+   "version_date": "Mar 05 2026"
+  },
+  {
+   "client": 2000747,
+   "patch": "1.41.3.8",
+   "revision": 10506889,
+   "date": "2026-03-09",
+   "version_date": "Mar 09 2026"
+  },
+  {
+   "client": 2000749,
+   "patch": "1.41.3.9",
+   "revision": 10516414,
+   "date": "2026-03-11",
+   "version_date": "Mar 11 2026"
+  },
+  {
+   "client": 2000750,
+   "patch": "1.41.4.0",
+   "revision": 10517293,
+   "date": "2026-03-12",
+   "version_date": "Mar 11 2026"
+  },
+  {
+   "client": 2000754,
+   "patch": "1.41.4.0",
+   "revision": 10522233,
+   "date": "2026-03-14",
+   "version_date": "Mar 13 2026"
+  },
+  {
+   "client": 2000756,
+   "patch": "1.41.4.0",
+   "revision": 10527048,
+   "date": "2026-03-16",
+   "version_date": "Mar 16 2026"
+  },
+  {
+   "client": 2000764,
+   "patch": "1.41.4.1",
+   "revision": 10533768,
+   "date": "2026-03-18",
+   "version_date": "Mar 18 2026"
+  },
+  {
+   "client": 2000765,
+   "patch": "1.41.4.1",
+   "revision": 10536586,
+   "date": "2026-03-19",
+   "version_date": "Mar 19 2026"
+  },
+  {
+   "client": 2000771,
+   "patch": "1.41.4.1",
+   "revision": 10552922,
+   "date": "2026-03-25",
+   "version_date": "Mar 25 2026"
+  },
+  {
+   "client": 2000776,
+   "patch": "1.41.4.1",
+   "revision": 10567450,
+   "date": "2026-03-31",
+   "version_date": "Mar 31 2026"
+  },
+  {
+   "client": 2000777,
+   "patch": "1.41.4.1",
+   "revision": 10575829,
+   "date": "2026-04-02",
+   "version_date": "Apr 02 2026"
+  },
+  {
+   "client": 2000791,
+   "patch": "1.41.5.1",
+   "revision": 10599975,
+   "date": "2026-04-20",
+   "version_date": "Apr 20 2026"
+  },
+  {
+   "client": 2000793,
+   "patch": "1.41.5.2",
+   "revision": 10600519,
+   "date": "2026-04-21",
+   "version_date": "Apr 20 2026"
+  },
+  {
+   "client": 2000794,
+   "patch": "1.41.5.2",
+   "revision": 10600762,
+   "date": "2026-04-21",
+   "version_date": "Apr 20 2026"
+  },
+  {
+   "client": 2000795,
+   "patch": "1.41.5.3",
+   "revision": 10604150,
+   "date": "2026-04-21",
+   "version_date": "Apr 21 2026"
+  },
+  {
+   "client": 2000797,
+   "patch": "1.41.5.4",
+   "revision": 10607298,
+   "date": "2026-04-22",
+   "version_date": "Apr 22 2026"
+  },
+  {
+   "client": 2000804,
+   "patch": "1.41.5.5",
+   "revision": 10613184,
+   "date": "2026-04-24",
+   "version_date": "Apr 24 2026"
+  },
+  {
+   "client": 2000805,
+   "patch": "1.41.5.6",
+   "revision": 10619855,
+   "date": "2026-04-28",
+   "version_date": "Apr 28 2026"
+  },
+  {
+   "client": 2000806,
+   "patch": "1.41.5.6",
+   "revision": 10621147,
+   "date": "2026-04-29",
+   "version_date": "Apr 28 2026"
+  },
+  {
+   "client": 2000807,
+   "patch": "1.41.5.7",
+   "revision": 10623543,
+   "date": "2026-04-29",
+   "version_date": "Apr 29 2026"
+  },
+  {
+   "client": 2000809,
+   "patch": "1.41.5.8",
+   "revision": 10627055,
+   "date": "2026-04-30",
+   "version_date": "Apr 30 2026"
+  },
+  {
+   "client": 2000812,
+   "patch": "1.41.5.9",
+   "revision": 10638965,
+   "date": "2026-05-06",
+   "version_date": "May 06 2026"
+  },
+  {
+   "client": 2000814,
+   "patch": "1.41.6.0",
+   "revision": 10641237,
+   "date": "2026-05-07",
+   "version_date": "May 07 2026"
+  },
+  {
+   "client": 2000820,
+   "patch": "1.41.6.0",
+   "revision": 10647942,
+   "date": "2026-05-11",
+   "version_date": "May 11 2026"
+  },
+  {
+   "client": 2000825,
+   "patch": "1.41.6.1",
+   "revision": 10658053,
+   "date": "2026-05-14",
+   "version_date": "May 14 2026"
+  },
+  {
+   "client": 2000827,
+   "patch": "1.41.6.2",
+   "revision": 10666121,
+   "date": "2026-05-18",
+   "version_date": "May 18 2026"
+  },
+  {
+   "client": 2000828,
+   "patch": "1.41.6.3",
+   "revision": 10673343,
+   "date": "2026-05-20",
+   "version_date": "May 20 2026"
+  },
+  {
+   "client": 2000832,
+   "patch": "1.41.6.4",
+   "revision": 10677034,
+   "date": "2026-05-22",
+   "version_date": "May 21 2026"
+  },
+  {
+   "client": 2000834,
+   "patch": "1.41.6.4",
+   "revision": 10677332,
+   "date": "2026-05-22",
+   "version_date": "May 21 2026"
+  },
+  {
+   "client": 2000835,
+   "patch": "1.41.6.4",
+   "revision": 10680414,
+   "date": "2026-05-22",
+   "version_date": "May 22 2026"
+  },
+  {
+   "client": 2000837,
+   "patch": "1.41.6.5",
+   "revision": 10693087,
+   "date": "2026-05-29",
+   "version_date": "May 28 2026"
+  },
+  {
+   "client": 2000839,
+   "patch": "1.41.6.5",
+   "revision": 10696799,
+   "date": "2026-05-30",
+   "version_date": "May 29 2026"
+  },
+  {
+   "client": 2000840,
+   "patch": "1.41.6.5",
+   "revision": 10700611,
+   "date": "2026-06-02",
+   "version_date": "Jun 01 2026"
+  },
+  {
+   "client": 2000845,
+   "patch": "1.41.6.5",
+   "revision": 10726901,
+   "date": "2026-06-10",
+   "version_date": "Jun 10 2026"
+  },
+  {
+   "client": 2000846,
+   "patch": "1.41.6.5",
+   "revision": 10727357,
+   "date": "2026-06-10",
+   "version_date": "Jun 10 2026"
+  },
+  {
+   "client": 2000847,
+   "patch": "1.41.6.5",
+   "revision": 10737367,
+   "date": "2026-06-15",
+   "version_date": "Jun 14 2026"
+  },
+  {
+   "client": 2000848,
+   "patch": "1.41.6.5",
+   "revision": 10745813,
+   "date": "2026-06-17",
+   "version_date": "Jun 16 2026"
+  },
+  {
+   "client": 2000853,
+   "patch": "1.41.6.6",
+   "revision": 10790421,
+   "date": "2026-07-01",
+   "version_date": "Jun 30 2026"
+  },
+  {
+   "client": 2000855,
+   "patch": "1.41.6.6",
+   "revision": 10791083,
+   "date": "2026-07-01",
+   "version_date": "Jul 01 2026"
+  },
+  {
+   "client": 2000856,
+   "patch": "1.41.6.6",
+   "revision": 10791703,
+   "date": "2026-07-01",
+   "version_date": "Jul 01 2026"
+  },
+  {
+   "client": 2000857,
+   "patch": "1.41.6.6",
+   "revision": 10794069,
+   "date": "2026-07-02",
+   "version_date": "Jul 01 2026"
+  },
+  {
+   "client": 2000858,
+   "patch": "1.41.6.6",
+   "revision": 10794707,
+   "date": "2026-07-02",
+   "version_date": "Jul 02 2026"
+  },
+  {
+   "client": 2000860,
+   "patch": "1.41.6.7",
+   "revision": 10797849,
+   "date": "2026-07-03",
+   "version_date": "Jul 03 2026"
+  },
+  {
+   "client": 2000861,
+   "patch": "1.41.6.7",
+   "revision": 10800205,
+   "date": "2026-07-06",
+   "version_date": "Jul 06 2026"
+  },
+  {
+   "client": 2000870,
+   "patch": "1.41.6.8",
+   "revision": 10808829,
+   "date": "2026-07-08",
+   "version_date": "Jul 08 2026"
+  },
+  {
+   "client": 2000872,
+   "patch": "1.41.6.8",
+   "revision": 10810984,
+   "date": "2026-07-09",
+   "version_date": "Jul 08 2026"
+  },
+  {
+   "client": 2000873,
+   "patch": "1.41.6.9",
+   "revision": 10812696,
+   "date": "2026-07-09",
+   "version_date": "Jul 09 2026"
+  },
+  {
+   "client": 2000875,
+   "patch": "1.41.7.0",
+   "revision": 10823172,
+   "date": "2026-07-15",
+   "version_date": "Jul 14 2026"
+  },
+  {
+   "client": 2000876,
+   "patch": "1.41.7.1",
+   "revision": 10830129,
+   "date": "2026-07-16",
+   "version_date": "Jul 16 2026"
+  },
+  {
+   "client": 2000877,
+   "patch": "1.41.7.2",
+   "revision": 10837589,
+   "date": "2026-07-20",
+   "version_date": "Jul 20 2026"
+  },
+  {
+   "client": 2000879,
+   "patch": "1.41.7.3",
+   "revision": 10862691,
+   "date": "2026-07-29",
+   "version_date": "Jul 28 2026"
+  },
+  {
+   "client": 2000880,
+   "patch": "1.41.7.4",
+   "revision": 10877702,
+   "date": "2026-08-03",
+   "version_date": "Aug 03 2026"
+  },
+  {
+   "client": 2000882,
+   "patch": "1.41.7.4",
+   "revision": 10897761,
+   "date": "2026-08-10",
+   "version_date": "Aug 10 2026"
+  },
+  {
+   "client": 2000883,
+   "patch": "1.41.7.4",
+   "revision": 10898412,
+   "date": "2026-08-10",
+   "version_date": "Aug 10 2026"
+  },
+  {
+   "client": 2000884,
+   "patch": "1.41.7.5",
+   "revision": 10905598,
+   "date": "2026-08-12",
+   "version_date": "Aug 12 2026"
+  }
+ ]
+}

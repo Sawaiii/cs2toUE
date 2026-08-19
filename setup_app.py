@@ -1,4 +1,4 @@
-"""cs2toUE-Setup.exe - the one and only installer.
+﻿"""cs2toUE-Setup.exe - the one and only installer.
 
 The whole application is packed inside this file. It asks for a folder, copies the
 program there, makes the shortcuts and registers an uninstall entry, all per user and
@@ -16,7 +16,7 @@ import winreg
 from pathlib import Path
 
 APP = "cs2toUE"
-VERSION = "1.0.3"
+VERSION = "1.0.4"
 REG_UNINSTALL = r"Software\Microsoft\Windows\CurrentVersion\Uninstall\cs2toUE"
 
 
@@ -86,7 +86,7 @@ def create_shortcuts(dest: Path, desktop: bool = True, start_menu: bool = True) 
     if start_menu:
         group = Path(os.environ["APPDATA"]) / r"Microsoft\Windows\Start Menu\Programs" / APP
         make_shortcut(group / f"{APP}.lnk", exe, dest, "CS2 demo to Unreal Engine")
-        make_shortcut(group / "Удалить cs2toUE.lnk", dest / "Uninstall.cmd", dest,
+        make_shortcut(group / "РЈРґР°Р»РёС‚СЊ cs2toUE.lnk", dest / "Uninstall.cmd", dest,
                       "Uninstall cs2toUE")
     if desktop:
         desk = Path(os.path.expanduser("~")) / "Desktop"
@@ -175,9 +175,9 @@ def install(target, desktop=True, start_menu=True, progress=None):
     # half a gigabyte of headroom: HLAE, maps and exported scenes land next to the program
     if 0 <= have < (need / 1024 ** 3 + 0.5):
         raise RuntimeError(
-            f"На диске {dest.drive} недостаточно места: свободно {have:.1f} ГБ, "
-            f"нужно {need / 1024 ** 2:.0f} МБ на программу и запас под скачиваемые файлы.\n\n"
-            f"Выберите другую папку — подойдёт любой диск."
+            f"РќР° РґРёСЃРєРµ {dest.drive} РЅРµРґРѕСЃС‚Р°С‚РѕС‡РЅРѕ РјРµСЃС‚Р°: СЃРІРѕР±РѕРґРЅРѕ {have:.1f} Р“Р‘, "
+            f"РЅСѓР¶РЅРѕ {need / 1024 ** 2:.0f} РњР‘ РЅР° РїСЂРѕРіСЂР°РјРјСѓ Рё Р·Р°РїР°СЃ РїРѕРґ СЃРєР°С‡РёРІР°РµРјС‹Рµ С„Р°Р№Р»С‹.\n\n"
+            f"Р’С‹Р±РµСЂРёС‚Рµ РґСЂСѓРіСѓСЋ РїР°РїРєСѓ вЂ” РїРѕРґРѕР№РґС‘С‚ Р»СЋР±РѕР№ РґРёСЃРє."
         )
     copy_app(src, dest, progress)
     write_uninstaller(dest)
@@ -194,20 +194,20 @@ def run_gui():
     from tkinter import filedialog, messagebox, ttk
 
     root = tk.Tk()
-    root.title(f"Установка {APP} {VERSION}")
+    root.title(f"РЈСЃС‚Р°РЅРѕРІРєР° {APP} {VERSION}")
     # the size is computed from the content at the end of this function: a fixed height
     # cut the buttons off as soon as one more option was added
 
-    ttk.Label(root, text=f"{APP} — конвертер демок CS2 в Unreal Engine",
+    ttk.Label(root, text=f"{APP} вЂ” РєРѕРЅРІРµСЂС‚РµСЂ РґРµРјРѕРє CS2 РІ Unreal Engine",
               font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=16, pady=(16, 2))
-    ttk.Label(root, text="Python и всё остальное уже внутри. Права администратора не нужны.\n"
-                         "HLAE, карты и модели скачиваются в папку программы — под них может\n"
-                         "уйти несколько гигабайт, папку можно поменять на любой диск.",
+    ttk.Label(root, text="Python Рё РІСЃС‘ РѕСЃС‚Р°Р»СЊРЅРѕРµ СѓР¶Рµ РІРЅСѓС‚СЂРё. РџСЂР°РІР° Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂР° РЅРµ РЅСѓР¶РЅС‹.\n"
+                         "HLAE, РєР°СЂС‚С‹ Рё РјРѕРґРµР»Рё СЃРєР°С‡РёРІР°СЋС‚СЃСЏ РІ РїР°РїРєСѓ РїСЂРѕРіСЂР°РјРјС‹ вЂ” РїРѕРґ РЅРёС… РјРѕР¶РµС‚\n"
+                         "СѓР№С‚Рё РЅРµСЃРєРѕР»СЊРєРѕ РіРёРіР°Р±Р°Р№С‚, РїР°РїРєСѓ РјРѕР¶РЅРѕ РїРѕРјРµРЅСЏС‚СЊ РЅР° Р»СЋР±РѕР№ РґРёСЃРє.",
               justify="left").pack(anchor="w", padx=16)
 
     frame = ttk.Frame(root)
     frame.pack(fill="x", padx=16, pady=14)
-    ttk.Label(frame, text="Папка установки").pack(anchor="w")
+    ttk.Label(frame, text="РџР°РїРєР° СѓСЃС‚Р°РЅРѕРІРєРё").pack(anchor="w")
     row = ttk.Frame(frame)
     row.pack(fill="x", pady=4)
     target_var = tk.StringVar(value=str(default_target()))
@@ -215,18 +215,18 @@ def run_gui():
     entry.pack(side="left", fill="x", expand=True)
 
     def browse():
-        chosen = filedialog.askdirectory(title="Куда установить cs2toUE")
+        chosen = filedialog.askdirectory(title="РљСѓРґР° СѓСЃС‚Р°РЅРѕРІРёС‚СЊ cs2toUE")
         if chosen:
             target_var.set(str(Path(chosen) / APP))
-    ttk.Button(row, text="Обзор...", command=browse).pack(side="left", padx=6)
+    ttk.Button(row, text="РћР±Р·РѕСЂ...", command=browse).pack(side="left", padx=6)
 
     space_var = tk.StringVar()
 
     def refresh_space(*_a):
         gb = free_gb(target_var.get())
         need = payload_size(payload_dir()) / 1024 ** 2
-        space_var.set(f"Нужно ~{need:.0f} МБ, свободно {gb:.1f} ГБ"
-                      if gb >= 0 else f"Нужно ~{need:.0f} МБ")
+        space_var.set(f"РќСѓР¶РЅРѕ ~{need:.0f} РњР‘, СЃРІРѕР±РѕРґРЅРѕ {gb:.1f} Р“Р‘"
+                      if gb >= 0 else f"РќСѓР¶РЅРѕ ~{need:.0f} РњР‘")
     target_var.trace_add("write", refresh_space)
     refresh_space()
     ttk.Label(frame, textvariable=space_var).pack(anchor="w")
@@ -237,18 +237,18 @@ def run_gui():
     launch_var = tk.BooleanVar(value=True)
     opts = ttk.Frame(root)
     opts.pack(fill="x", padx=16)
-    ttk.Checkbutton(opts, text="Ярлык на рабочем столе", variable=desktop_var).pack(anchor="w")
-    ttk.Checkbutton(opts, text="Ярлык в меню «Пуск»", variable=menu_var).pack(anchor="w")
-    ttk.Checkbutton(opts, text="Сразу скачать HLAE и Source 2 Viewer (~150 МБ, нужен интернет)",
+    ttk.Checkbutton(opts, text="РЇСЂР»С‹Рє РЅР° СЂР°Р±РѕС‡РµРј СЃС‚РѕР»Рµ", variable=desktop_var).pack(anchor="w")
+    ttk.Checkbutton(opts, text="РЇСЂР»С‹Рє РІ РјРµРЅСЋ В«РџСѓСЃРєВ»", variable=menu_var).pack(anchor="w")
+    ttk.Checkbutton(opts, text="РЎСЂР°Р·Сѓ СЃРєР°С‡Р°С‚СЊ HLAE Рё Source 2 Viewer (~150 РњР‘, РЅСѓР¶РµРЅ РёРЅС‚РµСЂРЅРµС‚)",
                     variable=tools_var).pack(anchor="w")
-    ttk.Checkbutton(opts, text="Запустить после установки", variable=launch_var).pack(anchor="w")
+    ttk.Checkbutton(opts, text="Р—Р°РїСѓСЃС‚РёС‚СЊ РїРѕСЃР»Рµ СѓСЃС‚Р°РЅРѕРІРєРё", variable=launch_var).pack(anchor="w")
 
     # packed from the bottom up, so the buttons can never be pushed out of the window
     buttons = ttk.Frame(root)
     buttons.pack(side="bottom", fill="x", padx=16, pady=12)
-    install_btn = ttk.Button(buttons, text="Установить")
+    install_btn = ttk.Button(buttons, text="РЈСЃС‚Р°РЅРѕРІРёС‚СЊ")
     install_btn.pack(side="right")
-    ttk.Button(buttons, text="Отмена", command=root.destroy).pack(side="right", padx=6)
+    ttk.Button(buttons, text="РћС‚РјРµРЅР°", command=root.destroy).pack(side="right", padx=6)
 
     status = tk.StringVar(value="")
     ttk.Label(root, textvariable=status).pack(side="bottom", anchor="w", padx=16)
@@ -261,7 +261,7 @@ def run_gui():
 
         def progress(fraction, name):
             bar["value"] = fraction * 100
-            status.set(f"копирование: {name}")
+            status.set(f"РєРѕРїРёСЂРѕРІР°РЅРёРµ: {name}")
             root.update()
 
         try:
@@ -269,14 +269,14 @@ def run_gui():
         except Exception as exc:
             install_btn.config(state="normal")
             status.set("")
-            messagebox.showerror("Установка не удалась", str(exc))
+            messagebox.showerror("РЈСЃС‚Р°РЅРѕРІРєР° РЅРµ СѓРґР°Р»Р°СЃСЊ", str(exc))
             return
         bar["value"] = 100
         tools_note = ""
         if tools_var.get():
             bar.config(mode="indeterminate")
             bar.start(12)
-            status.set("скачивание HLAE и Source 2 Viewer...")
+            status.set("СЃРєР°С‡РёРІР°РЅРёРµ HLAE Рё Source 2 Viewer...")
             root.update()
 
             def tool_status(line):
@@ -287,15 +287,15 @@ def run_gui():
             bar.stop()
             bar.config(mode="determinate")
             bar["value"] = 100
-            tools_note = ("\n\nHLAE и Source 2 Viewer скачаны — программа готова к работе."
+            tools_note = ("\n\nHLAE Рё Source 2 Viewer СЃРєР°С‡Р°РЅС‹ вЂ” РїСЂРѕРіСЂР°РјРјР° РіРѕС‚РѕРІР° Рє СЂР°Р±РѕС‚Рµ."
                           if got else
-                          "\n\nИнструменты скачать не удалось (нет сети?) — программа "
-                          "докачает их при первом использовании.")
-        status.set(f"Готово: {dest}")
-        messagebox.showinfo("Установка завершена",
-                            f"{APP} установлен в\n{dest}\n\n"
-                            "cs2toUE.exe — окно программы\n"
-                            "cs2toue-cli.exe — то же самое в консоли" + tools_note)
+                          "\n\nРРЅСЃС‚СЂСѓРјРµРЅС‚С‹ СЃРєР°С‡Р°С‚СЊ РЅРµ СѓРґР°Р»РѕСЃСЊ (РЅРµС‚ СЃРµС‚Рё?) вЂ” РїСЂРѕРіСЂР°РјРјР° "
+                          "РґРѕРєР°С‡Р°РµС‚ РёС… РїСЂРё РїРµСЂРІРѕРј РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРё.")
+        status.set(f"Р“РѕС‚РѕРІРѕ: {dest}")
+        messagebox.showinfo("РЈСЃС‚Р°РЅРѕРІРєР° Р·Р°РІРµСЂС€РµРЅР°",
+                            f"{APP} СѓСЃС‚Р°РЅРѕРІР»РµРЅ РІ\n{dest}\n\n"
+                            "cs2toUE.exe вЂ” РѕРєРЅРѕ РїСЂРѕРіСЂР°РјРјС‹\n"
+                            "cs2toue-cli.exe вЂ” С‚Рѕ Р¶Рµ СЃР°РјРѕРµ РІ РєРѕРЅСЃРѕР»Рё" + tools_note)
         if launch_var.get():
             os.startfile(str(dest / "cs2toUE.exe"))
         root.destroy()

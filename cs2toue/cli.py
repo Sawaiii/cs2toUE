@@ -7,7 +7,8 @@ import json
 import sys
 from pathlib import Path
 
-from . import __version__, assets, demoinfo, highlights, maplib, models, steam, ueproject
+from . import (__version__, assets, demoinfo, gameversions, highlights, maplib,
+               models, steam, ueproject)
 from .config import Config, PROJECT_DIR
 from .hlae import camio, index as hlae_index, manager as hlae_manager, resolver as hlae_resolver
 from .ue import BUILD_SEQUENCE, IMPORT_MAP, IMPORT_MODELS
@@ -165,6 +166,35 @@ def cmd_prefetch(args):
     ok("tools ready")
 
 
+
+def _print_game_version(cfg, d):
+    """Which CS2 version the demo was recorded on, and how it relates to yours."""
+    if d.engine != "source2" or not d.build_num:
+        return
+    rows = gameversions.ensure_fresh()
+    found = gameversions.match(d.build_num, rows)
+    print("game")
+    if not found.patch:
+        warn(f"версия игры по build_num {d.build_num} не опознана "
+             f"(таблица: {len(rows)} обновлений) - подбор HLAE идёт по вашему клиенту")
+        return
+    print(f"  версия демки  {found.label}")
+    installed = steam.installed_version(cfg.cs2_exe).get("PatchVersion", "") if cfg.cs2_exe else ""
+    if installed:
+        print(f"  ваш клиент    CS2 {installed}   {gameversions.compare(found.patch, installed)}")
+    try:
+        entries = hlae_index.ensure_fresh()
+        era = gameversions.hlae_at_date(found.date, entries)
+        if era:
+            print(f"  HLAE той эпохи {era['version']}   (вышел {era['published']}) - "
+                  f"если проигрывать демку на клиенте того времени")
+        fits = gameversions.hlae_for_patch(found.patch, entries)
+        if fits and (not era or fits["version"] != era["version"]):
+            print(f"  под эту версию {fits['version']}   - новейший HLAE, ещё не "
+                  f"перешедший на более новый патч игры")
+    except Exception:
+        pass
+
 def cmd_inspect(args):
     cfg = _cfg(args)
     d = _demo(args.demo)
@@ -180,6 +210,7 @@ def cmd_inspect(args):
         return
     print("demo")
     _print_demo(d)
+    _print_game_version(cfg, d)
     print("hlae")
     try:
         res = _resolve(cfg, d, args.hlae)

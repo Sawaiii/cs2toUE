@@ -44,7 +44,7 @@ def packet(cmd: int, tick: int, payload: bytes) -> bytes:
     return varint(cmd) + varint(tick) + varint(len(payload)) + payload
 
 
-def make_cs2(path: Path, map_name="de_dust2", build=14107, ticks=76800, seconds=1200.0,
+def make_cs2(path: Path, map_name="de_dust2", build=2000797, ticks=76800, seconds=1200.0,
              rounds=(1024, 12000, 24000, 36000)):
     header = (
         field_str(1, "PBDEMS2\0")

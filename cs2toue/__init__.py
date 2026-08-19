@@ -1,4 +1,4 @@
-"""cs2toUE - convert Counter-Strike 2 / CS:GO demos into Unreal Engine scenes.
+﻿"""cs2toUE - convert Counter-Strike 2 / CS:GO demos into Unreal Engine scenes.
 
 Pipeline glue around existing tools:
   * HLAE (advancedfx)        - per-demo-version game hook, camera IO, recording
@@ -7,4 +7,4 @@ Pipeline glue around existing tools:
   * Unreal Engine Python API - Level Sequence builder
 """
 
-__version__ = "1.0.3"
+__version__ = "1.0.4"
