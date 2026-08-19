@@ -564,6 +564,34 @@ def cmd_preview(args):
     show(args.scene)
 
 
+def cmd_update(args):
+    from . import updater
+    cfg = _cfg(args)
+    upd = updater.check(cfg, args.current, force=True)
+    print(f"  установлено   {upd.current}")
+    print(f"  на GitHub     {upd.version or '?'}   {upd.published}")
+    if upd.error:
+        warn(upd.error)
+        return
+    if not upd.available:
+        ok(upd.summary)
+        return
+    print(f"  файл          {upd.asset}  ({human(upd.size)})")
+    if upd.notes:
+        print("  что нового:")
+        for line in upd.notes.splitlines()[:12]:
+            print(f"    {line}")
+    if args.check:
+        print(f"\n  обновить:  cs2toue-cli update --yes")
+        return
+    if not args.yes:
+        answer = input("\nОбновить сейчас? [y/N] ").strip().lower()
+        if answer not in ("y", "yes", "д", "да"):
+            print("отменено")
+            return
+    updater.update(cfg, args.current, force=True, restart=not args.no_restart)
+
+
 def cmd_clips(args):
     cfg = _cfg(args)
     d = _demo(args.demo)
@@ -841,6 +869,13 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("scene")
     s.set_defaults(func=cmd_preview)
 
+    s = sub.add_parser("update", help="check GitHub for a new version and update in place")
+    s.add_argument("--check", action="store_true", help="only report, do not update")
+    s.add_argument("--yes", action="store_true", help="update without asking")
+    s.add_argument("--no-restart", action="store_true", help="do not relaunch afterwards")
+    s.add_argument("--current", default="", help="pretend this version is installed (testing)")
+    s.set_defaults(func=cmd_update)
+
     s = sub.add_parser("clips", help="find the interesting moments in a demo")
     s.add_argument("demo")
     s.add_argument("--min-kills", type=int, default=3, help="smallest multikill to report")
@@ -869,7 +904,7 @@ def build_parser() -> argparse.ArgumentParser:
     x.add_argument("--max-effects", type=int, default=0, help="cap the number of effect actors")
     x.add_argument("--dry-run", action="store_true", help="print the command instead of running")
     x = us.add_parser("models", help="import exported models into the project")
-    x.add_argument("--path", default="", help="models folder (default: workspace\models)")
+    x.add_argument("--path", default="", help="models folder (default: the models folder in the workspace)")
     x.add_argument("--scene", default="", help="also write ue_mapping.json for this scene")
     x.add_argument("--package", default="", help="content path, default /Game/cs2toUE/Models")
     x.add_argument("--dry-run", action="store_true")

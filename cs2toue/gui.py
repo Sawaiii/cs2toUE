@@ -50,6 +50,7 @@ class App:
                 self.cfg.save()
         self.log(f"cs2.exe: {self.cfg.cs2_exe or 'NOT FOUND - set it in Settings'}")
         self._show_ue_state()
+        self.check_update()
 
     # ---------------------------------------------------------------- ui
 
@@ -62,6 +63,8 @@ class App:
         self.demo_var = tk.StringVar(value="no demo selected")
         ttk.Label(top, textvariable=self.demo_var).pack(side="left", padx=10)
         ttk.Button(top, text="Settings", command=self.settings).pack(side="right")
+        self.update_btn = ttk.Button(top, text="Обновить", command=self.run_update)
+        self.update_label = ttk.Label(top, text="", foreground="#1a7f37")
 
         body = ttk.Frame(self.root)
         body.pack(fill="both", expand=True, **pad)
@@ -297,6 +300,53 @@ class App:
         except Exception as exc:
             self.log(f"camera skipped: {exc}")
         self._show_ue_cmd()
+
+    # ------------------------------------------------------------ updates
+
+    def check_update(self):
+        """Runs once on start; the result is cached for a day, so it costs nothing."""
+        self.task(self._check_update)
+
+    def _check_update(self):
+        from . import updater
+        upd = updater.check(self.cfg)
+        self.pending_update = upd
+        if upd.error:
+            self.log(f"проверка обновлений: {upd.error}")
+            return
+        if not upd.available:
+            self.log(f"версия {upd.current} - последняя")
+            return
+        self.log(f"доступна версия {upd.version} ({human(upd.size)})")
+        self.update_label.config(text=f"Доступна версия {upd.version}")
+        self.update_label.pack(side="right", padx=8)
+        self.update_btn.pack(side="right")
+
+    def run_update(self):
+        upd = getattr(self, "pending_update", None)
+        if not upd or not upd.available:
+            return
+        notes = "\n".join(upd.notes.splitlines()[:10])
+        if not messagebox.askyesno(
+                TITLE,
+                f"Обновить {upd.current} → {upd.version}?\n\n"
+                f"Будет скачано {human(upd.size)} — только файлы программы.\n"
+                f"Скачанные HLAE, карты, сцены и настройки останутся на месте.\n\n{notes}"):
+            return
+        self.task(self._run_update)
+
+    def _run_update(self):
+        from . import updater
+        try:
+            updater.update(self.cfg, force=True)
+        except Exception as exc:
+            self.log(f"обновление не удалось: {exc}")
+            messagebox.showerror(TITLE, str(exc))
+            return
+        messagebox.showinfo(TITLE, "Обновление скачано.\n\n"
+                                   "Программа сейчас закроется, файлы заменятся "
+                                   "и она запустится снова.")
+        self.root.destroy()
 
     # ------------------------------------------------------------ camera / preview
 

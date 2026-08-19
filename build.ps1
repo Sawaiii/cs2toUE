@@ -139,6 +139,15 @@ if ($LASTEXITCODE -ne 0) { Die "application build failed" }
 $appMB = (Get-ChildItem $appDir -Recurse -File | Measure-Object Length -Sum).Sum / 1MB
 Ok ("application ready ({0:N0} MB): {1}" -f $appMB, $appDir)
 
+# update archive: the program files only, which is what the in-app updater downloads
+# instead of the whole installer
+$zip = Join-Path $ws 'build\cs2toUE-app.zip'
+if (Test-Path $zip) { Remove-Item $zip -Force }
+Say "packing the update archive"
+Compress-Archive -Path (Join-Path $appDir '*') -DestinationPath $zip -CompressionLevel Optimal
+$zipMB = (Get-Item $zip).Length / 1MB
+Ok ("update archive ready ({0:N0} MB): {1}" -f $zipMB, $zip)
+
 if ($AppOnly) { exit 0 }
 
 Say "building the installer"
