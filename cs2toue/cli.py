@@ -54,7 +54,7 @@ def _print_demo(d: demoinfo.DemoInfo) -> None:
 
 
 def _resolve(cfg, d, forced="") -> hlae_resolver.Resolution:
-    entries = hlae_index.load(auto_refresh=True)
+    entries = hlae_index.ensure_fresh()
     res = hlae_resolver.resolve(d, cfg, entries, forced or cfg.hlae_channel)
     return res
 
@@ -124,7 +124,10 @@ def cmd_doctor(args):
         print(f"  CS2 patch     {v.get('PatchVersion', '?')}")
     try:
         entries = hlae_index.load()
-        print(f"  HLAE index    {len(entries)} releases, newest {hlae_index.latest(entries)['version']}")
+        age = hlae_index.age_days()
+        fresh = "обновлён только что" if age < 1 else f"обновлён {int(age)} дн. назад"
+        print(f"  HLAE index    {len(entries)} releases, newest "
+              f"{hlae_index.latest(entries)['version']} ({fresh})")
     except Exception as exc:
         warn(f"HLAE index    {exc}")
     inst = hlae_manager.installed(cfg)
@@ -147,7 +150,7 @@ def cmd_doctor(args):
 def cmd_prefetch(args):
     """Download the external tools now, so later runs work without waiting (or offline)."""
     cfg = _cfg(args)
-    entries = hlae_index.load(auto_refresh=True)
+    entries = hlae_index.ensure_fresh()
     version = args.hlae or hlae_index.latest(entries)["version"]
     hlae_manager.install(cfg, version)
     if args.csgo:
@@ -199,7 +202,7 @@ def cmd_hlae(args):
         ok(f"index rebuilt: {len(entries)} releases, newest {entries[0]['version']}")
         return
     if sub == "list":
-        entries = hlae_index.load(auto_refresh=True)
+        entries = hlae_index.ensure_fresh(quiet=False)
         if args.csgo:
             entries = hlae_index.with_csgo_support(entries)
         for e in entries[: args.limit]:

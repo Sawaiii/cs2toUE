@@ -125,6 +125,13 @@ class App:
             anchor="w", padx=6, pady=4)
         row = ttk.Frame(hl)
         row.pack(fill="x", padx=6, pady=4)
+        ttk.Label(row, text="version").pack(side="left")
+        self.hlae_pick = tk.StringVar()
+        self.hlae_box = ttk.Combobox(row, textvariable=self.hlae_pick, width=44,
+                                     state="readonly")
+        self.hlae_box.pack(side="left", padx=6)
+        row = ttk.Frame(hl)
+        row.pack(fill="x", padx=6, pady=4)
         ttk.Button(row, text="Install", command=self.install_hlae).pack(side="left")
         ttk.Button(row, text="Play demo in CS2", command=self.play).pack(side="left", padx=6)
         ttk.Button(row, text="Refresh index", command=self.refresh_index).pack(side="left")
@@ -257,18 +264,67 @@ class App:
         self.round_box["values"] = ["all"] + [str(i + 1) for i in range(len(d.round_start_ticks))]
         self.round_var.set("all")
         try:
-            entries = hlae_index.load(auto_refresh=True)
+            entries = hlae_index.ensure_fresh()
             self.res = hlae_resolver.resolve(d, self.cfg, entries)
             state = "installed" if hlae_manager.is_installed(self.cfg, self.res.version) else "not installed"
             self.hlae_var.set(f"HLAE {self.res.version} ({state})\n{self.res.reason}")
+            self._fill_hlae_versions(entries)
             for w in self.res.warnings:
                 self.log(f"warning: {w}")
         except Exception as exc:
             self.hlae_var.set(f"could not resolve: {exc}")
         self.log(f"loaded {Path(path).name}: {d.label}, map {d.map_name}")
 
+
+    def _fill_hlae_versions(self, entries=None):
+        """Any released build can be picked by hand; the resolved one comes first."""
+        entries = entries if entries is not None else hlae_index.load()
+        installed = set(hlae_manager.installed(self.cfg))
+        recommended = self.res.version if self.res else ""
+        wanted_hook = "hook_source" if (self.demo and self.demo.engine == "source1")             else "hook_source2"
+
+        def label(e):
+            marks = []
+            if e["version"] == recommended:
+                marks.append("рекомендуется")
+            if e["version"] in installed:
+                marks.append("скачана")
+            if e.get("cs2_updates"):
+                marks.append("CS2 " + e["cs2_updates"][-1])
+            if e.get("prerelease"):
+                marks.append("pre")
+            return f"{e['version']:<10} {e['published']}  " + ", ".join(marks)
+
+        usable = [e for e in entries if e.get(wanted_hook)]
+        head = [e for e in usable if e["version"] == recommended]
+        rest = [e for e in usable if e["version"] != recommended]
+        keep = head + [e for e in rest if e["version"] in installed] + rest[:60]
+        seen, ordered = set(), []
+        for e in keep:
+            if e["version"] not in seen:
+                seen.add(e["version"])
+                ordered.append(e)
+
+        self.hlae_entries = ordered
+        self.hlae_box["values"] = [label(e) for e in ordered]
+        if ordered:
+            self.hlae_box.current(0)
+
+    def _selected_hlae(self) -> str:
+        idx = self.hlae_box.current()
+        entries = getattr(self, "hlae_entries", [])
+        if 0 <= idx < len(entries):
+            return entries[idx]["version"]
+        return self.res.version if self.res else ""
+
     def refresh_index(self):
-        self.task(lambda: (hlae_index.refresh(), self.log("HLAE index refreshed")))
+        def run():
+            entries = hlae_index.refresh()
+            self.log(f"индекс HLAE обновлён: {len(entries)} релизов, "
+                     f"новейший {hlae_index.latest(entries)['version']}")
+            if self.demo:
+                self._fill_hlae_versions(entries)
+        self.task(run)
 
     def install_hlae(self):
         if not self.res:
@@ -276,10 +332,11 @@ class App:
         self.task(self._install_hlae)
 
     def _install_hlae(self):
-        self.log(f"installing HLAE {self.res.version} ...")
-        hlae_manager.install(self.cfg, self.res.version)
-        self.hlae_var.set(f"HLAE {self.res.version} (installed)\n{self.res.reason}")
-        self.log("HLAE ready")
+        version = self._selected_hlae()
+        self.log(f"установка HLAE {version} ...")
+        hlae_manager.install(self.cfg, version)
+        self._fill_hlae_versions()
+        self.log(f"HLAE {version} готов")
 
     def play(self):
         if not (self.demo and self.res):
@@ -288,10 +345,11 @@ class App:
 
     def _play(self):
         from .util import popen
-        hlae_manager.install(self.cfg, self.res.version)
+        version = self._selected_hlae()
+        hlae_manager.install(self.cfg, version)
         cfg_file = hlae_manager.write_session_cfg(self.cfg, self.demo.path)
         cmd = hlae_manager.build_launch_args(
-            self.cfg, self.res.version, self.demo.path, hook=self.res.hook_dll,
+            self.cfg, version, self.demo.path, hook=self.res.hook_dll,
             exec_cfg=cfg_file.stem)
         popen(cmd)
         self.log("HLAE launched")
@@ -346,6 +404,17 @@ class App:
 
     def _check_update(self):
         from . import updater
+        # HLAE publishes builds constantly, so refresh the release index too - once a
+        # day at most, and never fatal when there is no network
+        try:
+            stale = hlae_index.age_days() > 1
+            entries = hlae_index.ensure_fresh()
+            if stale:
+                self.log(f"индекс HLAE обновлён: {len(entries)} релизов, "
+                         f"новейший {hlae_index.latest(entries)['version']}")
+        except Exception as exc:
+            self.log(f"индекс HLAE: {exc}")
+
         upd = updater.check(self.cfg)
         self.pending_update = upd
         if upd.error:

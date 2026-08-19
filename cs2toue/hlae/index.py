@@ -19,7 +19,9 @@ import re
 from pathlib import Path
 
 from ..config import DATA_DIR
-from ..util import http_json, version_tuple
+import time
+
+from ..util import http_json, ok, version_tuple, warn
 
 INDEX_PATH = DATA_DIR / "hlae_index.json"
 RELEASES_API = "https://api.github.com/repos/advancedfx/advancedfx/releases?per_page=100&page={page}"
@@ -75,6 +77,35 @@ def refresh(max_pages: int = 10) -> list:
         encoding="utf-8",
     )
     return entries
+
+
+def age_days() -> float:
+    """How old the local snapshot is. Infinite when there is none."""
+    if not INDEX_PATH.is_file():
+        return float("inf")
+    return (time.time() - INDEX_PATH.stat().st_mtime) / 86400.0
+
+
+def ensure_fresh(max_age_days: float = 1.0, quiet: bool = True) -> list:
+    """Refresh the index if it got stale.
+
+    HLAE ships new builds constantly, so a snapshot from install day goes out of date
+    within weeks. This runs before anything that reads the index; if the network is
+    down, the old snapshot is kept and used - being offline must not break the tool.
+    """
+    if age_days() <= max_age_days:
+        return load()
+    try:
+        entries = refresh()
+        if not quiet:
+            ok(f"HLAE index refreshed: {len(entries)} releases")
+        return entries
+    except Exception as exc:
+        if not quiet:
+            warn(f"could not refresh the HLAE index ({exc}), using the local copy")
+        if INDEX_PATH.is_file():
+            return load()
+        raise
 
 
 def load(auto_refresh: bool = False) -> list:
