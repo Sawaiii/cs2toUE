@@ -1,0 +1,22 @@
+# everything the program downloads or generates: HLAE builds, converted maps,
+# exported scenes, the venv, the pip cache, the PyInstaller build
+workspace/
+
+# build output (the installer is published as a release asset, not committed)
+cs2toUE-Setup.exe
+dist/
+build/
+
+# local machine paths
+cs2toue.config.json
+
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# editors
+.vscode/
+.idea/
+*.swp

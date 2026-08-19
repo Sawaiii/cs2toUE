@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "comment": "Edit freely: pins win over policies. Add a pin once you verified a combo.",
+  "pins": [],
+  "allow_prerelease": false,
+  "policies": {
+    "source2": {
+      "strategy": "match_installed_game",
+      "min_version": "2.148.0"
+    },
+    "source1": {
+      "strategy": "newest_with_csgo_hook",
+      "max_version": ""
+    }
+  }
+}

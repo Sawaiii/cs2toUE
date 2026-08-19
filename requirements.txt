@@ -1,0 +1,5 @@
+# CS2 demo parsing (Rust core, Python API) - https://github.com/LaihoE/demoparser
+demoparser2>=0.41
+pandas>=2.0
+# optional: lets the header reader open snappy-compressed demo packets
+python-snappy; platform_system != "Windows"
