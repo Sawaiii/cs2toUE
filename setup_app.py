@@ -134,6 +134,37 @@ def register(dest: Path, size_kb: int) -> None:
         winreg.SetValueEx(key, "NoRepair", 0, winreg.REG_DWORD, 1)
 
 
+def download_tools(dest: Path, status=None, timeout: int = 900) -> bool:
+    """Pull HLAE and the Source 2 Viewer CLI right away.
+
+    They are not baked into the installer on purpose: the right HLAE build depends on
+    which CS2 patch the machine has, and both tools get new releases constantly. Doing
+    it here means the program is complete once the installer finishes.
+    """
+    exe = dest / "cs2toue-cli.exe"
+    if not exe.is_file():
+        return False
+    try:
+        proc = subprocess.Popen(
+            [str(exe), "prefetch"], cwd=str(dest),
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            text=True, encoding="utf-8", errors="replace",
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        )
+    except OSError:
+        return False
+    try:
+        for line in proc.stdout:
+            line = line.strip()
+            if line and status:
+                status(line[:90])
+        proc.wait(timeout=timeout)
+    except Exception:
+        proc.kill()
+        return False
+    return proc.returncode == 0
+
+
 def install(target, desktop=True, start_menu=True, progress=None):
     src = payload_dir()
     if not (src / "cs2toUE.exe").is_file():
@@ -202,11 +233,14 @@ def run_gui():
 
     desktop_var = tk.BooleanVar(value=True)
     menu_var = tk.BooleanVar(value=True)
+    tools_var = tk.BooleanVar(value=True)
     launch_var = tk.BooleanVar(value=True)
     opts = ttk.Frame(root)
     opts.pack(fill="x", padx=16)
     ttk.Checkbutton(opts, text="Ярлык на рабочем столе", variable=desktop_var).pack(anchor="w")
     ttk.Checkbutton(opts, text="Ярлык в меню «Пуск»", variable=menu_var).pack(anchor="w")
+    ttk.Checkbutton(opts, text="Сразу скачать HLAE и Source 2 Viewer (~150 МБ, нужен интернет)",
+                    variable=tools_var).pack(anchor="w")
     ttk.Checkbutton(opts, text="Запустить после установки", variable=launch_var).pack(anchor="w")
 
     bar = ttk.Progressbar(root, mode="determinate", maximum=100.0)
@@ -236,11 +270,30 @@ def run_gui():
             messagebox.showerror("Установка не удалась", str(exc))
             return
         bar["value"] = 100
+        tools_note = ""
+        if tools_var.get():
+            bar.config(mode="indeterminate")
+            bar.start(12)
+            status.set("скачивание HLAE и Source 2 Viewer...")
+            root.update()
+
+            def tool_status(line):
+                status.set(line)
+                root.update()
+
+            got = download_tools(dest, tool_status)
+            bar.stop()
+            bar.config(mode="determinate")
+            bar["value"] = 100
+            tools_note = ("\n\nHLAE и Source 2 Viewer скачаны — программа готова к работе."
+                          if got else
+                          "\n\nИнструменты скачать не удалось (нет сети?) — программа "
+                          "докачает их при первом использовании.")
         status.set(f"Готово: {dest}")
         messagebox.showinfo("Установка завершена",
                             f"{APP} установлен в\n{dest}\n\n"
                             "cs2toUE.exe — окно программы\n"
-                            "cs2toue-cli.exe — то же самое в консоли")
+                            "cs2toue-cli.exe — то же самое в консоли" + tools_note)
         if launch_var.get():
             os.startfile(str(dest / "cs2toUE.exe"))
         root.destroy()
@@ -262,6 +315,7 @@ def say(text: str) -> None:
 def run_silent(argv):
     target = default_target()
     shortcuts = True
+    tools = True
     log = None
     for i, arg in enumerate(argv):
         if arg.startswith("--target="):
@@ -270,6 +324,8 @@ def run_silent(argv):
             target = Path(argv[i + 1])
         elif arg == "--no-shortcuts":
             shortcuts = False
+        elif arg == "--no-tools":
+            tools = False
         elif arg.startswith("--log="):
             log = Path(arg.split("=", 1)[1])
     say(f"installing to {target}")
@@ -280,9 +336,14 @@ def run_silent(argv):
         if log:
             log.write_text(f"failed: {exc}\n", encoding="utf-8")
         return 1
-    say(f"installed: {dest}")
+    result = f"installed: {dest}"
+    if tools:
+        say("downloading HLAE and Source 2 Viewer")
+        got = download_tools(dest, say)
+        result += "\ntools: " + ("downloaded" if got else "not downloaded, will be fetched later")
+    say(result)
     if log:
-        log.write_text(f"installed: {dest}\n", encoding="utf-8")
+        log.write_text(result + "\n", encoding="utf-8")
     return 0
 
 
