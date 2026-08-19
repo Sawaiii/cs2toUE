@@ -195,8 +195,8 @@ def run_gui():
 
     root = tk.Tk()
     root.title(f"Установка {APP} {VERSION}")
-    root.geometry("620x330")
-    root.resizable(False, False)
+    # the size is computed from the content at the end of this function: a fixed height
+    # cut the buttons off as soon as one more option was added
 
     ttk.Label(root, text=f"{APP} — конвертер демок CS2 в Unreal Engine",
               font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=16, pady=(16, 2))
@@ -243,16 +243,18 @@ def run_gui():
                     variable=tools_var).pack(anchor="w")
     ttk.Checkbutton(opts, text="Запустить после установки", variable=launch_var).pack(anchor="w")
 
-    bar = ttk.Progressbar(root, mode="determinate", maximum=100.0)
-    bar.pack(fill="x", padx=16, pady=(12, 4))
-    status = tk.StringVar(value="")
-    ttk.Label(root, textvariable=status).pack(anchor="w", padx=16)
-
+    # packed from the bottom up, so the buttons can never be pushed out of the window
     buttons = ttk.Frame(root)
-    buttons.pack(fill="x", padx=16, pady=10)
+    buttons.pack(side="bottom", fill="x", padx=16, pady=12)
     install_btn = ttk.Button(buttons, text="Установить")
     install_btn.pack(side="right")
     ttk.Button(buttons, text="Отмена", command=root.destroy).pack(side="right", padx=6)
+
+    status = tk.StringVar(value="")
+    ttk.Label(root, textvariable=status).pack(side="bottom", anchor="w", padx=16)
+
+    bar = ttk.Progressbar(root, mode="determinate", maximum=100.0)
+    bar.pack(side="bottom", fill="x", padx=16, pady=(12, 4))
 
     def do_install():
         install_btn.config(state="disabled")
@@ -299,6 +301,16 @@ def run_gui():
         root.destroy()
 
     install_btn.config(command=do_install)
+
+    # size the window to what the content actually needs, then center it
+    root.update_idletasks()
+    width = max(640, root.winfo_reqwidth())
+    height = root.winfo_reqheight()
+    x = max(0, (root.winfo_screenwidth() - width) // 2)
+    y = max(0, (root.winfo_screenheight() - height) // 3)
+    root.geometry(f"{width}x{height}+{x}+{y}")
+    root.minsize(width, height)
+    root.resizable(True, False)
     root.mainloop()
 
 
