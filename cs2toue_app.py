@@ -28,8 +28,10 @@ def force_utf8() -> None:
 
 def main() -> int:
     force_utf8()
+    from cs2toue import __version__
     from cs2toue.config import bootstrap_files
-    bootstrap_files()
+    # pass the version so an update refreshes the Unreal scripts next to the exe
+    bootstrap_files(__version__)
 
     if len(sys.argv) > 1:
         from cs2toue.cli import main as cli_main

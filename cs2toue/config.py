@@ -59,26 +59,47 @@ def default_workspace() -> Path:
     return DEFAULT_WORKSPACE
 
 
-def bootstrap_files() -> None:
-    """First run of a frozen build: unpack data/ and the Unreal scripts next to the exe.
+def bootstrap_files(version: str = "") -> None:
+    """Unpack data/ and the Unreal scripts next to the exe.
 
     The Unreal scripts have to be real files on disk - UnrealEditor-Cmd runs them by
     path, it cannot read them out of the bundle.
+
+    What gets overwritten matters. The scripts belong to the program and must follow it
+    on every update, otherwise an updated build would keep driving Unreal with the
+    scripts of the version it was first installed as. The files under data/ are the
+    opposite: the HLAE index, the CS2 version table and the user pins are refreshed at
+    runtime, so they are only written when missing.
     """
     if not FROZEN:
         return
-    for name, dest in (("data", DATA_DIR), ("ue", UE_SCRIPT_DIR)):
+    marker = APP_DIR / ".bootstrap"
+    previous = marker.read_text(encoding="utf-8").strip() if marker.is_file() else ""
+    upgraded = bool(version) and previous != version
+
+    for name, dest, overwrite in (("data", DATA_DIR, False),
+                                  ("ue", UE_SCRIPT_DIR, upgraded)):
         src = BUNDLE_DIR / name
         if not src.is_dir():
             continue
         dest.mkdir(parents=True, exist_ok=True)
         for item in src.rglob("*"):
-            if item.is_dir():
+            if item.is_dir() or "__pycache__" in item.parts:
                 continue
             target = dest / item.relative_to(src)
-            if not target.exists():
-                target.parent.mkdir(parents=True, exist_ok=True)
+            if target.exists() and not overwrite:
+                continue
+            target.parent.mkdir(parents=True, exist_ok=True)
+            try:
                 shutil.copy2(item, target)
+            except OSError:
+                pass
+
+    if version and previous != version:
+        try:
+            marker.write_text(version, encoding="utf-8")
+        except OSError:
+            pass
 
 
 @dataclass

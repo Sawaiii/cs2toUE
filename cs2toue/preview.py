@@ -12,6 +12,8 @@ follow them with the camera rigs later.
 
 from __future__ import annotations
 
+import math
+
 import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
@@ -202,7 +204,6 @@ class Preview:
                 c.create_line(sx - 5, sy - 5, sx + 5, sy + 5, fill="#666666", width=2)
                 c.create_line(sx - 5, sy + 5, sx + 5, sy - 5, fill="#666666", width=2)
                 continue
-            import math
             yaw = math.radians(row[4])
             c.create_line(sx, sy, sx + 18 * math.cos(yaw), sy - 18 * math.sin(yaw),
                           fill=color, width=2)

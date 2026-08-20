@@ -21,7 +21,7 @@ VRF_ASSET = "cli-windows-x64.zip"
 
 ASSET_FLAGS = {
     "map": ["-d", "-e", "vwrld_c", "--gltf_export_format", "glb",
-            "--gltf_export_materials", "--gltf_textures_adapt"],
+            "--gltf_export_materials", "--gltf_textures_adapt", "--threads", "4"],
     "model": ["-d", "--gltf_export_format", "glb", "--gltf_export_materials",
               "--gltf_export_animations"],
 }
@@ -65,6 +65,24 @@ def ensure_cli(cfg) -> Path:
     return exe
 
 
+
+def game_info_args(cfg) -> list:
+    """--game wants the gameinfo.gi FILE, not the folder.
+
+    Passing a directory silently loses the search paths, and the export comes out
+    without materials and textures.
+    """
+    from . import steam
+    root = steam.game_root(cfg.cs2_exe)
+    if not root:
+        return []
+    for rel in ("game/csgo/gameinfo.gi", "game/csgo_core/gameinfo.gi"):
+        gi = Path(root) / rel
+        if gi.is_file():
+            return ["--game", str(gi)]
+    return []
+
+
 def export_map(cfg, vpk_path, out_dir=None, extra_flags=None) -> Path:
     """Decompile a map .vpk to glb. Returns the output folder."""
     exe = ensure_cli(cfg)
@@ -74,10 +92,7 @@ def export_map(cfg, vpk_path, out_dir=None, extra_flags=None) -> Path:
     out_dir = Path(out_dir or (cfg.assets_dir / vpk_path.stem))
     out_dir.mkdir(parents=True, exist_ok=True)
     cmd = [exe, "-i", str(vpk_path), "-o", str(out_dir)] + ASSET_FLAGS["map"]
-    from . import steam
-    root = steam.game_root(cfg.cs2_exe)
-    if root:
-        cmd += ["--game", str(root / "game" / "csgo")]
+    cmd += game_info_args(cfg)
     cmd += list(extra_flags or [])
     run(cmd)
     glbs = sorted(out_dir.rglob("*.glb")) + sorted(out_dir.rglob("*.gltf"))

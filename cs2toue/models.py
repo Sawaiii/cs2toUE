@@ -56,7 +56,7 @@ class ModelBuild:
 # ------------------------------------------------------------------ discovery
 
 def pak_files(cfg, cs2_dir: str = "") -> list:
-    root = Path(cs2_dir) if cs2_dir else steam.game_root(cfg.cs2_exe)
+    root = steam.game_root_from_any(cs2_dir) if cs2_dir else steam.game_root(cfg.cs2_exe)
     if not root:
         raise Fail("CS2 folder is unknown - run: cs2toue setup --cs2-exe <path to cs2.exe>")
     root = Path(root)
@@ -182,9 +182,7 @@ def export(cfg, model, force: bool = False, cs2_dir: str = "") -> ModelBuild:
     cmd = [exe, "-i", model["vpk"], "-f", model["path"], "-o", str(out_dir), "-d",
            "--gltf_export_format", "glb", "--gltf_export_materials",
            "--gltf_export_animations", "--gltf_textures_adapt"]
-    root = steam.game_root(cfg.cs2_exe) if not cs2_dir else Path(cs2_dir)
-    if root:
-        cmd += ["--game", str(Path(root) / "game" / "csgo")]
+    cmd += assets.game_info_args(cfg)
     from .util import run
     run(cmd, check=False)
 

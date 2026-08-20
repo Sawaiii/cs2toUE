@@ -34,10 +34,6 @@ SETUP_ASSET = "cs2toUE-Setup.exe"    # full installer - fallback for a fresh ins
 
 CHECK_INTERVAL = 24 * 3600           # do not hit the API more than once a day
 
-# files that belong to the user, never replaced by an update
-KEEP = ("workspace", "cs2toue.config.json", "data/hlae_rules.json")
-
-
 @dataclass
 class Update:
     available: bool = False

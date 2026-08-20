@@ -161,8 +161,10 @@ def _rig_static(target_rows, _others, opt):
     pos = opt.get("position")
     if not pos:
         first = target_rows[0]
-        pos = (_f(first, I_X) + opt["distance"] or 300.0,
-               _f(first, I_Y) + 300.0, _f(first, I_Z) + 200.0)
+        # the brackets matter: "x + distance or 300" would parse as "(x + distance) or 300"
+        offset = opt["distance"] or 300.0
+        height = opt["height"] or 200.0
+        pos = (_f(first, I_X) + offset, _f(first, I_Y) + offset, _f(first, I_Z) + height)
     path = []
     for row in target_rows:
         tx, ty, tz = _f(row, I_X), _f(row, I_Y), _eye(row)

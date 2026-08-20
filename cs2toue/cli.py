@@ -357,6 +357,16 @@ def cmd_export(args):
         with_grenades=not args.no_grenades, with_events=not args.no_events,
         camera=args.camera, max_players=args.max_players,
     )
+    if clip:
+        # remember what the clip is about: the camera rigs pick their target from it
+        import json as _json
+        scene_file = out / "scene.json"
+        payload = _json.loads(scene_file.read_text(encoding="utf-8"))
+        payload["meta"]["clip"] = {"id": clip.id, "kind": clip.kind, "title": clip.title,
+                                   "player": clip.player, "steamid": clip.steamid,
+                                   "round": clip.round}
+        scene_file.write_text(_json.dumps(payload, indent=1, ensure_ascii=False),
+                              encoding="utf-8")
     ok(f"scene written: {out / 'scene.json'}")
     print(f"  actors        {len(sc.actors)}  ({sum(a.frames for a in sc.actors)} keyframes)")
     print(f"  events        {len(sc.events)}")
