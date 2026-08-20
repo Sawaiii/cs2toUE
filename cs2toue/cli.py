@@ -12,7 +12,8 @@ from . import (__version__, assets, demoinfo, gameversions, highlights, maplib,
 from .config import Config, PROJECT_DIR
 from .hlae import camio, index as hlae_index, manager as hlae_manager, resolver as hlae_resolver
 from .ue import BUILD_SEQUENCE, IMPORT_MAP, IMPORT_MODELS
-from .util import Fail, human, info, ok, parse_timecode, popen, slug, warn
+from .util import (Fail, force_utf8, human, info, ok, parse_timecode, popen,
+                   slug, warn)
 
 
 # --------------------------------------------------------------------- helpers
@@ -60,12 +61,15 @@ def _resolve(cfg, d, forced="") -> hlae_resolver.Resolution:
     return res
 
 
-def _tick_range(args, d):
+def _tick_range(args, d, cfg=None):
     start, end = 0, d.playback_ticks or 0
     if getattr(args, "round", 0):
         rounds = d.round_start_ticks
         if not rounds:
-            raise Fail("this demo carries no round table; use --from/--to instead")
+            # Valve demos have no round table in the header - read it from the events
+            rounds = highlights.round_starts(cfg, d.path, d)
+        if not rounds:
+            raise Fail("в этой демке не нашлись раунды; используйте --from/--to или --clip-id")
         i = int(args.round) - 1
         if not 0 <= i < len(rounds):
             raise Fail(f"round {args.round} out of range (demo has {len(rounds)} rounds)")
@@ -90,7 +94,8 @@ def _tick_range(args, d):
 def cmd_setup(args):
     cfg = _cfg(args)
     if args.cs2_exe:
-        cfg.cs2_exe = args.cs2_exe
+        # a folder, the exe, or anything inside the install - all fine
+        cfg.cs2_exe = steam.resolve_cs2(args.cs2_exe) or args.cs2_exe
     if not cfg.cs2_exe:
         cfg.cs2_exe = steam.find_cs2_exe()
     if not cfg.steam_path:
@@ -337,7 +342,7 @@ def cmd_export(args):
             raise Fail(f"moment {args.clip_id} not found - run: cs2toue clips {args.demo}")
         info(f"clip {clip.id}: {clip.title} at {clip.timecode} ({clip.duration}s)")
 
-    start, end = (clip.tick_start, clip.tick_end) if clip else _tick_range(args, d)
+    start, end = (clip.tick_start, clip.tick_end) if clip else _tick_range(args, d, cfg)
     step = max(1, int(round(d.tickrate / float(args.fps or cfg.export_fps))))
     out = Path(args.out) if args.out else cfg.exports_dir / slug(Path(args.demo).stem)
     if clip:
@@ -382,13 +387,13 @@ def cmd_maps(args):
     cs2_dir = getattr(args, "cs2_dir", "")
 
     if cs2_dir:
-        exe = Path(cs2_dir) / "game" / "bin" / "win64" / "cs2.exe"
-        if exe.is_file():
-            cfg.cs2_exe = str(exe)
+        exe = steam.resolve_cs2(cs2_dir)
+        if exe:
+            cfg.cs2_exe = exe
             cfg.save()
-            ok(f"cs2 folder remembered: {cs2_dir}")
+            ok(f"cs2.exe найден: {exe}")
         else:
-            warn(f"cs2.exe not found under {cs2_dir} - maps are still scanned from there")
+            warn(f"cs2.exe не найден по пути {cs2_dir} - карты всё равно ищутся там")
 
     if sub == "list":
         rows = maplib.status(cfg) if not cs2_dir else [(m, maplib.load_library(cfg).get(m.name), "ready" if maplib.cached(cfg, m) else "not converted") for m in maplib.scan(cfg, cs2_dir)]
@@ -975,6 +980,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv=None) -> int:
+    force_utf8()
     args = build_parser().parse_args(argv)
     try:
         args.func(args)

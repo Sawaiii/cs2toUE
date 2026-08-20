@@ -63,14 +63,11 @@ class MapBuild:
 
 def scan(cfg, cs2_dir: str = "") -> list:
     """Every map vpk in the install, plus subscribed workshop maps."""
-    root = Path(cs2_dir) if cs2_dir else steam.game_root(cfg.cs2_exe)
+    root = steam.game_root_from_any(cs2_dir) if cs2_dir else steam.game_root(cfg.cs2_exe)
     out = []
     seen = set()
     if root and Path(root).is_dir():
         root = Path(root)
-        # accept both the install root and the .../game/csgo folder
-        if root.name == "csgo" and (root.parent.name == "game"):
-            root = root.parent.parent
         for sub in MAP_DIRS:
             d = root / sub
             if not d.is_dir():

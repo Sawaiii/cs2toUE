@@ -20,6 +20,7 @@ from __future__ import annotations
 import json
 import re
 import time
+from datetime import date, timedelta
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -41,15 +42,18 @@ class GameVersion:
     patch: str = ""
     revision: int = 0
     date: str = ""
-    exact: bool = False       # did the demo build number match, or is this the nearest?
-    matched_on: str = ""      # which column matched
+    exact: bool = False       # did the demo build number match a table identifier?
+    matched_on: str = ""      # which column matched, or "build_date"
+    built: str = ""           # the day the client that recorded the demo was built
 
     @property
     def label(self) -> str:
         if not self.patch:
             return "неизвестно"
-        near = "" if self.exact else " (ближайшая известная)"
-        return f"CS2 {self.patch}, сборка {self.client}, {self.date}{near}"
+        if self.matched_on == "build_date":
+            return (f"CS2 {self.patch} (обновление {self.date}), "
+                    f"клиент собран {self.built}")
+        return f"CS2 {self.patch}, сборка {self.client}, {self.date}"
 
 
 # ------------------------------------------------------------------ storage
@@ -135,11 +139,35 @@ def ensure_fresh(max_age_days: float = MAX_AGE_DAYS, quiet: bool = True) -> list
 
 # ------------------------------------------------------------------ matching
 
+# Source keeps its build number as a day counter since this date - the demo header
+# carries exactly that, so a demo can be dated to the day.
+BUILD_EPOCH = date(1996, 10, 24)
+CS2_RELEASE = date(2023, 9, 27)
+
+
+def date_from_build(build_num: int):
+    """Build number -> the day that client was built. None when it makes no sense.
+
+    Checked against real demos: build 10203 -> 2024-09-30 and build 10329 -> 2025-02-03,
+    both landing a few days after a game update, which is what a client build should do.
+    """
+    if not build_num or build_num <= 0:
+        return None
+    try:
+        built = BUILD_EPOCH + timedelta(days=int(build_num))
+    except (OverflowError, ValueError):
+        return None
+    if not (CS2_RELEASE <= built <= date.today() + timedelta(days=7)):
+        return None
+    return built
+
+
 def match(build_num: int, rows: list | None = None) -> GameVersion:
     """Find the game version a demo was recorded on.
 
-    The build number is compared with every identifier in the table; if none matches
-    exactly, the closest earlier build is reported and flagged as approximate.
+    Two ways, in order of confidence: the build number may be one of the identifiers in
+    the table, and failing that it is turned into a date (Source counts days since
+    1996-10-24) and mapped to whichever game update was current on that day.
     """
     rows = rows if rows is not None else load()
     if not rows or not build_num:
@@ -150,19 +178,18 @@ def match(build_num: int, rows: list | None = None) -> GameVersion:
             if r.get(column) == build_num:
                 return GameVersion(client=r["client"], patch=r["patch"],
                                    revision=r.get("revision", 0), date=r["date"],
-                                   exact=True, matched_on=column)
+                                   exact=True, matched_on=column,
+                                   built=r["date"])
 
-    # nearest earlier build, but only inside a range where the numbering is comparable
-    for column in ("client", "revision"):
-        candidates = [r for r in rows if 0 < r.get(column, 0) <= build_num]
-        if not candidates:
-            continue
-        nearest = max(candidates, key=lambda r: r[column])
-        spread = max(r[column] for r in rows) - min(r[column] for r in rows if r[column])
-        if spread and (build_num - nearest[column]) <= spread:
-            return GameVersion(client=nearest["client"], patch=nearest["patch"],
-                               revision=nearest.get("revision", 0), date=nearest["date"],
-                               exact=False, matched_on=column)
+    built = date_from_build(build_num)
+    if built:
+        earlier = [r for r in rows if r["date"] <= built.isoformat()]
+        if earlier:
+            r = max(earlier, key=lambda r: r["date"])
+            return GameVersion(client=r["client"], patch=r["patch"],
+                               revision=r.get("revision", 0), date=r["date"],
+                               exact=False, matched_on="build_date",
+                               built=built.isoformat())
     return GameVersion()
 
 

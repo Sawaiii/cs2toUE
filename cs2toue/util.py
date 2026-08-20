@@ -10,6 +10,28 @@ from pathlib import Path
 
 # --------------------------------------------------------------------------- log
 
+def force_utf8() -> None:
+    """Make console output survive any code page.
+
+    Player nicknames routinely carry emoji and non-Latin letters. Printing those to a
+    cp1251/cp866 console raises UnicodeEncodeError and kills the command, so the streams
+    are switched to UTF-8 with replacement, and the console code page follows.
+    """
+    os.environ.setdefault("PYTHONUTF8", "1")
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            if stream is not None:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+    try:
+        import ctypes
+        ctypes.windll.kernel32.SetConsoleOutputCP(65001)
+        ctypes.windll.kernel32.SetConsoleCP(65001)
+    except Exception:
+        pass
+
+
 def _isatty() -> bool:
     """A windowed build has no stdout at all - sys.stdout is None there."""
     try:

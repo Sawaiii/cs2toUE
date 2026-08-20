@@ -8,7 +8,26 @@ same script - cs2toUE.exe (windowed) and cs2toue-cli.exe (console).
 import sys
 
 
+def force_utf8() -> None:
+    """Console output must survive any system locale, not just a Russian one."""
+    import os
+    os.environ.setdefault("PYTHONUTF8", "1")
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            if stream is not None:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+    try:
+        import ctypes
+        ctypes.windll.kernel32.SetConsoleOutputCP(65001)
+        ctypes.windll.kernel32.SetConsoleCP(65001)
+    except Exception:
+        pass
+
+
 def main() -> int:
+    force_utf8()
     from cs2toue.config import bootstrap_files
     bootstrap_files()
 

@@ -178,7 +178,8 @@ class App:
         row = ttk.Frame(mp)
         row.pack(fill="x", padx=6, pady=4)
         ttk.Button(row, text="CS2 folder...", command=self.pick_cs2_dir).pack(side="left")
-        ttk.Button(row, text="Rescan", command=self.scan_maps).pack(side="left", padx=6)
+        ttk.Button(row, text="cs2.exe...", command=self.pick_cs2_exe).pack(side="left", padx=6)
+        ttk.Button(row, text="Rescan", command=self.scan_maps).pack(side="left")
         row = ttk.Frame(mp)
         row.pack(fill="x", padx=6, pady=4)
         self.map_var = tk.StringVar()
@@ -256,12 +257,14 @@ class App:
             f"net protocol  {d.network_protocol}",
             f"length        {int(d.playback_time)//60}:{int(d.playback_time)%60:02d} "
             f"({d.playback_ticks} ticks @ {d.tickrate})",
-            f"rounds        {len(d.round_start_ticks)}",
+            f"rounds        {len(getattr(self, 'rounds', []) or d.round_start_ticks)}",
             f"server        {d.server_name}",
         ]
         self.info_text.delete("1.0", "end")
         self.info_text.insert("end", "\n".join(lines))
-        self.round_box["values"] = ["all"] + [str(i + 1) for i in range(len(d.round_start_ticks))]
+        # Valve demos keep no round table in the header, so it comes from the events
+        self.rounds = highlights.round_starts(self.cfg, d.path, d)
+        self.round_box["values"] = ["all"] + [str(i + 1) for i in range(len(self.rounds))]
         self.round_var.set("all")
         try:
             entries = hlae_index.ensure_fresh()
@@ -376,7 +379,7 @@ class App:
             self.log(f"clip {clip.id}: {clip.title}")
         elif self.round_var.get() != "all":
             i = int(self.round_var.get()) - 1
-            starts = d.round_start_ticks
+            starts = getattr(self, "rounds", []) or d.round_start_ticks
             start = starts[i]
             end = starts[i + 1] - 1 if i + 1 < len(starts) else d.playback_ticks
             name += f"_round{i + 1}"
@@ -580,16 +583,29 @@ class App:
     # ------------------------------------------------------------ map library
 
     def pick_cs2_dir(self):
-        path = filedialog.askdirectory(title="Select your Counter-Strike Global Offensive folder")
-        if not path:
-            return
-        exe = Path(path) / "game" / "bin" / "win64" / "cs2.exe"
-        if exe.is_file():
-            self.cfg.cs2_exe = str(exe)
+        path = filedialog.askdirectory(title="Папка Counter-Strike 2 (подойдёт любая внутри неё)")
+        if path:
+            self._use_cs2_path(path)
+
+    def pick_cs2_exe(self):
+        path = filedialog.askopenfilename(
+            title="Выберите cs2.exe",
+            filetypes=[("cs2.exe", "cs2.exe"), ("Программы", "*.exe"), ("Все файлы", "*.*")])
+        if path:
+            self._use_cs2_path(path)
+
+    def _use_cs2_path(self, path):
+        """The exe, the install root or the folder that holds the exe - all accepted."""
+        exe = steam.resolve_cs2(path)
+        if exe:
+            self.cfg.cs2_exe = exe
             self.cfg.save()
             self.log(f"cs2.exe: {exe}")
+            version = steam.installed_version(exe).get("PatchVersion", "")
+            if version:
+                self.log(f"установленная версия CS2: {version}")
         else:
-            self.log(f"cs2.exe not found under {path} - scanning for maps anyway")
+            self.log(f"cs2.exe не найден по пути {path} - карты всё равно поищу там")
         self.cs2_dir = path
         self.scan_maps()
 

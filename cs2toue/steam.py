@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 from pathlib import Path
 
@@ -63,6 +64,59 @@ def find_cs2_exe() -> str:
         if exe.is_file():
             return str(exe)
     return ""
+
+
+def resolve_cs2(path) -> str:
+    """Accept whatever the user points at and find cs2.exe.
+
+    People select all sorts of things: the exe itself, the install root, or the folder
+    that actually holds the exe (game\\bin\\win64). All of them are valid answers to
+    "where is your CS2", so all of them work here.
+    """
+    if not path:
+        return ""
+    p = Path(path)
+    if p.is_file():
+        return str(p) if p.name.lower() == "cs2.exe" else ""
+    if not p.is_dir():
+        return ""
+    candidates = [
+        p / "cs2.exe",                                  # game\bin\win64 itself
+        p / "game" / "bin" / "win64" / "cs2.exe",       # install root
+        p / "bin" / "win64" / "cs2.exe",                # the game folder
+        p.parent / "cs2.exe",
+        p / "Counter-Strike Global Offensive" / "game" / "bin" / "win64" / "cs2.exe",
+    ]
+    for cand in candidates:
+        if cand.is_file():
+            return str(cand)
+    # someone may point at a folder deeper in the tree, e.g. game\csgo
+    for parent in p.parents:
+        cand = parent / "game" / "bin" / "win64" / "cs2.exe"
+        if cand.is_file():
+            return str(cand)
+    # shallow walk as a last resort: deep rglob over a 40 GB install is far too slow
+    root_depth = len(p.parts)
+    for dirpath, dirnames, filenames in os.walk(p):
+        if len(Path(dirpath).parts) - root_depth >= 4:
+            dirnames[:] = []
+            continue
+        if "cs2.exe" in filenames:
+            return str(Path(dirpath) / "cs2.exe")
+    return ""
+
+
+def game_root_from_any(path) -> Path | None:
+    """The Counter-Strike Global Offensive folder, from any path inside the install."""
+    exe = resolve_cs2(path)
+    if exe:
+        return game_root(exe)
+    p = Path(path) if path else None
+    if p and p.is_dir():
+        for parent in [p] + list(p.parents):
+            if (parent / "game" / "csgo").is_dir():
+                return parent
+    return None
 
 
 def game_root(cs2_exe: str) -> Path | None:

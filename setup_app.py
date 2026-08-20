@@ -1,4 +1,4 @@
-﻿"""cs2toUE-Setup.exe - the one and only installer.
+"""cs2toUE-Setup.exe - the one and only installer.
 
 The whole application is packed inside this file. It asks for a folder, copies the
 program there, makes the shortcuts and registers an uninstall entry, all per user and
@@ -16,7 +16,7 @@ import winreg
 from pathlib import Path
 
 APP = "cs2toUE"
-VERSION = "1.0.4"
+VERSION = "1.0.5"
 REG_UNINSTALL = r"Software\Microsoft\Windows\CurrentVersion\Uninstall\cs2toUE"
 
 
@@ -68,17 +68,35 @@ def copy_app(src: Path, dest: Path, progress=None) -> None:
 
 
 def _powershell(script: str) -> None:
-    subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script],
-                   creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0), check=False)
+    """Run a script through a file, never through -Command.
+
+    A command line with non-ASCII characters goes through the console code page of the
+    machine, which turns Cyrillic into mojibake on a differently localised Windows. A
+    UTF-8 file with a BOM is read correctly by PowerShell everywhere.
+    """
+    tmp = Path(os.environ.get("TEMP", ".")) / "cs2toue_setup_step.ps1"
+    try:
+        tmp.write_text(script, encoding="utf-8-sig")
+        subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass",
+                        "-File", str(tmp)],
+                       creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0), check=False)
+    except Exception:
+        pass
+    finally:
+        try:
+            tmp.unlink()
+        except OSError:
+            pass
 
 
 def make_shortcut(link: Path, target: Path, workdir: Path, description: str) -> None:
     link.parent.mkdir(parents=True, exist_ok=True)
-    _powershell(
+    script = (
         "$s=(New-Object -ComObject WScript.Shell).CreateShortcut('{}');"
         "$s.TargetPath='{}';$s.WorkingDirectory='{}';$s.Description='{}';$s.Save()".format(
             link, target, workdir, description)
     )
+    _powershell(script)
 
 
 def create_shortcuts(dest: Path, desktop: bool = True, start_menu: bool = True) -> None:
@@ -359,7 +377,25 @@ def run_silent(argv):
     return 0
 
 
+def force_utf8() -> None:
+    """Make output readable no matter what code page the machine uses."""
+    os.environ.setdefault("PYTHONUTF8", "1")
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            if stream is not None:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+    try:
+        import ctypes
+        ctypes.windll.kernel32.SetConsoleOutputCP(65001)
+        ctypes.windll.kernel32.SetConsoleCP(65001)
+    except Exception:
+        pass
+
+
 def main():
+    force_utf8()
     argv = sys.argv[1:]
     if "--silent" in argv or "/S" in argv:
         return run_silent(argv)

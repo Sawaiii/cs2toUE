@@ -173,6 +173,36 @@ def detect(cfg, demo_path, demo_info, min_kills: int = 3, pre: float = 6.0,
     return out
 
 
+def round_starts(cfg, demo_path, demo_info) -> list:
+    """Start tick of every round.
+
+    Valve matchmaking demos carry no round table in the header (CDemoFileInfo has only
+    the playback length), so the rounds are recovered from round_start events and
+    cached - parsing events costs a few seconds even on a long match.
+    """
+    if demo_info.round_start_ticks:
+        return [int(t) for t in demo_info.round_start_ticks]
+
+    cache = cache_path(cfg, demo_path).with_name(
+        cache_path(cfg, demo_path).stem + "_rounds.json")
+    if cache.is_file():
+        try:
+            return json.loads(cache.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    try:
+        from demoparser2 import DemoParser
+        df = DemoParser(str(demo_path)).parse_event("round_start")
+    except Exception as exc:
+        warn(f"не удалось прочитать раунды: {exc}")
+        return []
+    ticks = sorted({int(_num(r.get("tick"), -1)) for r in df.to_dict("records")
+                    if _num(r.get("tick"), -1) >= 0}) if df is not None and len(df) else []
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    cache.write_text(json.dumps(ticks), encoding="utf-8")
+    return ticks
+
+
 def _round_table(demo_info, events, last_tick) -> list:
     starts = list(demo_info.round_start_ticks or [])
     if not starts:
