@@ -120,10 +120,11 @@ def parse_timecode(value: str, tickrate: float) -> int:
     return int(float(value))
 
 
-def run(cmd: list, cwd: str | None = None, check: bool = True, quiet: bool = False) -> int:
+def run(cmd: list, cwd: str | None = None, check: bool = True, quiet: bool = False,
+        env: dict | None = None) -> int:
     if not quiet:
         info("run: " + " ".join(f'"{c}"' if " " in str(c) else str(c) for c in cmd))
-    proc = subprocess.run([str(c) for c in cmd], cwd=cwd)
+    proc = subprocess.run([str(c) for c in cmd], cwd=cwd, env=env)
     if check and proc.returncode != 0:
         raise Fail(f"command failed (exit {proc.returncode}): {cmd[0]}")
     return proc.returncode

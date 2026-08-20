@@ -80,5 +80,20 @@ def main(argv):
     unreal.log("cs2toUE: check the skeletal meshes and animations, then run build_sequence.py")
 
 
+def finish():
+    """Close the editor when running headless; stay open in an interactive session."""
+    try:
+        if "-unattended" in unreal.SystemLibrary.get_command_line().lower():
+            unreal.SystemLibrary.quit_editor()
+    except Exception:
+        pass
+
+
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    try:
+        main(sys.argv[1:])
+    except Exception:
+        import traceback
+        unreal.log_error("cs2toUE: " + traceback.format_exc())
+    finally:
+        finish()

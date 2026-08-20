@@ -41,8 +41,10 @@ DEFAULTS = {
     "effects": 1,                        # smokes, molotovs, explosions, flashes
     "tracers": 1,                        # one beam per shot (can be a lot)
     "max_effects": 1500,                 # hard cap so a long clip cannot flood the level
+    "active_camera": "",                 # which camera gets the camera cut (default: first)
     "spawn_actors": 1,                   # 0 = only build tracks for actors already bound
     "mapping": "",                       # json file: actor kind/team -> asset path
+    "level": "",                         # level to build into, e.g. /Game/cs2toUE/Maps/de_dust2
 }
 
 
@@ -99,6 +101,9 @@ def fov_to_focal_length(fov_deg, sensor_width=36.0):
 
 # ----------------------------------------------------------------- unreal glue
 
+# renamed between engine versions: SequenceTimeUnit up to 5.3, MovieSceneTimeUnit later
+TIME_UNIT = getattr(unreal, "MovieSceneTimeUnit", None) or getattr(unreal, "SequenceTimeUnit")
+
 def editor_actor_subsystem():
     try:
         return unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
@@ -132,7 +137,7 @@ def add_transform_track(seq, binding, rows, fps, scale, z_offset, duration):
     section.set_range_seconds(0.0, max(duration, 1.0 / fps))
     ch = section.get_all_channels()   # locX locY locZ rotX(roll) rotY(pitch) rotZ(yaw) sclXYZ
     lin = unreal.MovieSceneKeyInterpolation.LINEAR
-    unit = unreal.SequenceTimeUnit.DISPLAY_RATE
+    unit = TIME_UNIT.DISPLAY_RATE
 
     prev_pitch = prev_yaw = prev_roll = None
     keys = 0
@@ -265,13 +270,37 @@ def add_visibility_track(seq, binding, rows, fps):
     section = track.add_section()
     section.set_range_seconds(0.0, float(rows[-1]["time"]) + 1.0 / fps)
     channel = section.get_all_channels()[0]
-    unit = unreal.SequenceTimeUnit.DISPLAY_RATE
+    unit = TIME_UNIT.DISPLAY_RATE
     for t, alive in transitions:
         channel.add_key(unreal.FrameNumber(int(round(t * fps))), bool(alive), 0.0, unit)
     return len(transitions)
 
 
-def add_camera(seq, rows, fps, scale, z_offset, duration):
+def _camera_component(cam):
+    """CineCameraActor exposes its component differently across engine versions."""
+    for way in ("get_cine_camera_component",):
+        try:
+            comp = getattr(cam, way)()
+            if comp is not None:
+                return comp
+        except Exception:
+            pass
+    for prop in ("cine_camera_component", "camera_component"):
+        try:
+            comp = cam.get_editor_property(prop)
+            if comp is not None:
+                return comp
+        except Exception:
+            continue
+    return None
+
+
+def add_camera(seq, label, rows, fps, scale, z_offset, duration, make_cut):
+    """One camera actor with its motion; only the active one owns the camera cut.
+
+    A sequence must carry a single camera cut track - one per camera made Sequencer
+    fight over the view when a scene had several rigs exported side by side.
+    """
     sub = editor_actor_subsystem()
     loc = to_ue_pos(float(rows[0]["x"]), float(rows[0]["y"]), float(rows[0]["z"]), scale, z_offset)
     if sub is not None:
@@ -279,22 +308,22 @@ def add_camera(seq, rows, fps, scale, z_offset, duration):
     else:
         cam = unreal.EditorLevelLibrary.spawn_actor_from_class(
             unreal.CineCameraActor, loc, unreal.Rotator(0, 0, 0))
-    cam.set_actor_label("cs2toUE_Camera")
+    cam.set_actor_label(label or "cs2toUE_Camera")
 
     binding = seq.add_possessable(cam)
     add_transform_track(seq, binding, rows, fps, scale, z_offset, duration)
 
     # focal length from the demo fov (horizontal)
-    comp = cam.camera_component
-    comp_binding = seq.add_possessable(comp)
+    comp = _camera_component(cam)
     fov_values = [float(r["fov"]) for r in rows if r.get("fov") not in (None, "")]
-    if fov_values:
+    if comp is not None and fov_values:
+        comp_binding = seq.add_possessable(comp)
         track = comp_binding.add_track(unreal.MovieSceneFloatTrack)
         track.set_property_name_and_path("CurrentFocalLength", "CurrentFocalLength")
         section = track.add_section()
         section.set_range_seconds(0.0, duration)
         channel = section.get_all_channels()[0]
-        unit = unreal.SequenceTimeUnit.DISPLAY_RATE
+        unit = TIME_UNIT.DISPLAY_RATE
         lin = unreal.MovieSceneKeyInterpolation.LINEAR
         last = None
         for row in rows:
@@ -309,16 +338,17 @@ def add_camera(seq, rows, fps, scale, z_offset, duration):
                             fl, 0.0, unit, lin)
 
     # camera cut so the sequence actually looks through it
-    cut_track = seq.add_track(unreal.MovieSceneCameraCutTrack)
-    cut_section = cut_track.add_section()
-    cut_section.set_range_seconds(0.0, duration)
-    try:
-        cut_section.set_camera_binding_id(
-            unreal.MovieSceneSequenceExtensions.get_binding_id(seq, binding))
-    except Exception:
-        binding_id = unreal.MovieSceneObjectBindingID()
-        binding_id.set_editor_property("guid", binding.get_id())
-        cut_section.set_camera_binding_id(binding_id)
+    if make_cut:
+        cut_track = seq.add_track(unreal.MovieSceneCameraCutTrack)
+        cut_section = cut_track.add_section()
+        cut_section.set_range_seconds(0.0, duration)
+        try:
+            cut_section.set_camera_binding_id(
+                unreal.MovieSceneSequenceExtensions.get_binding_id(seq, binding))
+        except Exception:
+            binding_id = unreal.MovieSceneObjectBindingID()
+            binding_id.set_editor_property("guid", binding.get_id())
+            cut_section.set_camera_binding_id(binding_id)
     return cam
 
 
@@ -403,7 +433,7 @@ def add_effects(seq, effects, fps, scale, z_offset, mapping, duration, max_effec
             section = track.add_section()
             section.set_range_seconds(0.0, duration)
             channel = section.get_all_channels()[0]
-            unit = unreal.SequenceTimeUnit.DISPLAY_RATE
+            unit = TIME_UNIT.DISPLAY_RATE
             channel.add_key(unreal.FrameNumber(0), False, 0.0, unit)
             channel.add_key(unreal.FrameNumber(int(round(start * fps))), True, 0.0, unit)
             channel.add_key(unreal.FrameNumber(int(round(end * fps))), False, 0.0, unit)
@@ -457,6 +487,10 @@ def main(argv):
     meta = scene["meta"]
 
     fps = float(opts["fps"]) or float(meta.get("sample_fps") or 30.0)
+    # keys are placed on the display-rate grid, so both must use the same number: a
+    # fractional sample rate (64/3 = 21.33) against an integer display rate would
+    # stretch the whole clip by the difference
+    fps = max(1, int(round(fps)))
     scale = float(opts["scale"])
     z_offset = float(opts["z_offset"])
     seq_name = opts["name"] or "SEQ_" + "".join(
@@ -470,6 +504,13 @@ def main(argv):
 
     unreal.log("cs2toUE: building {} from {} ({} actors, {} fps)".format(
         seq_name, scene_dir, len(scene["actors"]), fps))
+
+    # actors go into a real level: either the one asked for, or a fresh one that gets
+    # saved at the end - bindings into an unsaved Untitled world die with the editor
+    if opts["level"]:
+        if not unreal.EditorLevelLibrary.load_level(str(opts["level"])):
+            unreal.log_error("cs2toUE: could not load level {}".format(opts["level"]))
+            return
 
     seq = unreal.AssetToolsHelpers.get_asset_tools().create_asset(
         seq_name, opts["package"], unreal.LevelSequence, unreal.LevelSequenceFactoryNew())
@@ -500,14 +541,22 @@ def main(argv):
     seq.set_playback_end_seconds(duration)
 
     total_keys = 0
+    cameras = []
     with unreal.ScopedSlowTask(len(loaded), "cs2toUE: building sequence") as task:
-        task.make_dialog(True)
+        # no dialog in headless mode: Slate is absent under -unattended and the
+        # attempt to open one brings the whole editor down
+        try:
+            if "-unattended" not in unreal.SystemLibrary.get_command_line().lower():
+                task.make_dialog(True)
+        except Exception:
+            pass
         for actor, rows in loaded:
             if task.should_cancel():
                 break
             task.enter_progress_frame(1, actor["name"] or actor["id"])
+            unreal.log("cs2toUE: + {} ({} rows)".format(actor.get("id"), len(rows)))
             if actor["kind"] == "camera":
-                add_camera(seq, rows, fps, scale, z_offset, duration)
+                cameras.append((actor, rows))
                 continue
             first = rows[0]
             loc = to_ue_pos(float(first["x"]), float(first["y"]), float(first["z"]),
@@ -534,6 +583,23 @@ def main(argv):
             if int(opts["visibility"]) and actor["kind"] == "player":
                 add_visibility_track(seq, binding, rows, fps)
 
+    if cameras:
+        want = str(opts["active_camera"]).strip().lower()
+        active = 0
+        for i, (actor, _rows) in enumerate(cameras):
+            if want and want in (str(actor.get("id", "")).lower(),
+                                 str(actor.get("name", "")).lower()):
+                active = i
+                break
+        for i, (actor, rows) in enumerate(cameras):
+            label = actor.get("id") or actor.get("name") or "cs2toUE_Camera"
+            unreal.log("cs2toUE: + camera {}".format(label))
+            add_camera(seq, label, rows, fps, scale, z_offset, duration,
+                       make_cut=(i == active))
+        unreal.log("cs2toUE: {} cameras, the cut follows '{}'".format(
+            len(cameras), cameras[active][0].get("id")))
+
+    unreal.log("cs2toUE: tracks done, placing effects")
     effects = scene.get("effects", [])
     if effects and int(opts["effects"]):
         if not int(opts["tracers"]):
@@ -544,9 +610,33 @@ def main(argv):
 
     add_event_markers(seq, scene.get("events", []), fps)
     unreal.EditorAssetLibrary.save_loaded_asset(seq)
+
+    world = unreal.EditorLevelLibrary.get_editor_world()
+    world_path = world.get_path_name() if world else ""
+    if world_path.startswith("/Temp/"):
+        level_path = "{}/L_{}".format(opts["package"].rstrip("/"), seq_name)
+        if unreal.EditorLoadingAndSavingUtils.save_map(world, level_path):
+            unreal.log("cs2toUE: level saved: {}".format(level_path))
+    else:
+        unreal.EditorLoadingAndSavingUtils.save_dirty_packages(True, True)
     unreal.log("cs2toUE: done - {} keyframes, {:.1f}s, asset {}/{}".format(
         total_keys, duration, opts["package"], seq_name))
 
 
+def finish():
+    """Close the editor when running headless; stay open in an interactive session."""
+    try:
+        if "-unattended" in unreal.SystemLibrary.get_command_line().lower():
+            unreal.SystemLibrary.quit_editor()
+    except Exception:
+        pass
+
+
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    try:
+        main(sys.argv[1:])
+    except Exception:
+        import traceback
+        unreal.log_error("cs2toUE: " + traceback.format_exc())
+    finally:
+        finish()

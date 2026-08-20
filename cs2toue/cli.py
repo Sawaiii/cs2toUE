@@ -512,6 +512,8 @@ def cmd_ue(args):
             extra.append("--animations=0")
         if args.max_effects:
             extra.append(f"--max-effects={args.max_effects}")
+        if args.active_camera:
+            extra.append(f"--active-camera={args.active_camera}")
         ueproject.build_sequence(cfg, args.scene, extra, dry_run=args.dry_run)
         return
 
@@ -951,6 +953,8 @@ def build_parser() -> argparse.ArgumentParser:
     x.add_argument("--no-tracers", action="store_true", help="skip the per-shot beams")
     x.add_argument("--no-animations", action="store_true", help="skip animation sections")
     x.add_argument("--max-effects", type=int, default=0, help="cap the number of effect actors")
+    x.add_argument("--active-camera", default="",
+                   help="which camera gets the camera cut, e.g. camera_follow (default: first)")
     x.add_argument("--dry-run", action="store_true", help="print the command instead of running")
     x = us.add_parser("models", help="import exported models into the project")
     x.add_argument("--path", default="", help="models folder (default: the models folder in the workspace)")

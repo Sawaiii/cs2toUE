@@ -76,7 +76,9 @@ class Scene:
         self.meta.setdefault("format_version", FORMAT_VERSION)
         self.meta.setdefault("space", "source")
         payload = {
-            "meta": self.meta,
+            # "_dir" is a runtime helper set by load(); a machine path in the file
+            # would churn on every save and break nothing but look like data
+            "meta": {k: v for k, v in self.meta.items() if k != "_dir"},
             "rounds": self.rounds,
             "effects": self.effects,
             "weapons": self.weapons,

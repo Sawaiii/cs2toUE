@@ -195,16 +195,68 @@ def ensure(cfg):
     return editor, cfg.ue_project
 
 
+def _ue_environment(cfg) -> dict:
+    """Unreal must not write its caches to C:.
+
+    The editor keeps the DerivedDataCache and its temp files in the user profile by
+    default; on a machine with a full system drive that is not a slowdown but a crash
+    at startup ("no writable nodes available"). Everything goes to the workspace, on
+    the same drive the user already chose for this program.
+    """
+    import os
+    env = os.environ.copy()
+    ddc = cfg.ws / "ue_ddc"
+    tmp = cfg.ws / "tmp"
+    for d in (ddc, tmp):
+        d.mkdir(parents=True, exist_ok=True)
+    env["UE-LocalDataCachePath"] = str(ddc)
+    env.setdefault("UE-SharedDataCachePath", str(ddc))
+    env["TMP"] = env["TEMP"] = str(tmp)
+    return env
+
+
+def _ddc_args(cfg) -> list:
+    """Use the plain file cache instead of ZenServer for headless runs.
+
+    UE 5.4+ fronts the local cache with a Zen server process that installs itself into
+    the user profile on C: - on a full system drive that copy fails and the whole
+    editor aborts. The NoZenLocalFallback graphs keep the classic file cache, which we
+    already point at the workspace via UE-LocalDataCachePath.
+    """
+    installed = Path(cfg.ue_engine or "") / "Engine" / "Build" / "InstalledBuild.txt"
+    graph = "InstalledNoZenLocalFallback" if installed.is_file() else "NoZenLocalFallback"
+    return [f"-ddc={graph}", "-NoZenAutoLaunch"]
+
+
 def run_script(cfg, script, script_args, dry_run: bool = False) -> list:
+    """Run one of our scripts inside a full offscreen editor.
+
+    Not the pythonscript commandlet: that mode never boots the level-editor machinery,
+    and the first spawned actor takes the whole process down. The real editor with
+    NullRHI (no rendering, no window) is how Epic's own render pipelines run headless.
+    The scripts call quit_editor() themselves when they see -Unattended.
+
+    Forward slashes on purpose: UE swallows a backslash-u sequence in -script/-ExecCmds
+    values as an escape, and the path loses a segment.
+    """
     editor, project = ensure(cfg)
-    arg = " ".join([str(script)] + [str(a) for a in script_args])
-    cmd = [editor, project, "-run=pythonscript", f"-script={arg}",
-           "-unattended", "-nosplash", "-stdout", "-FullStdOutLogOutput"]
+    arg = " ".join(str(a).replace(chr(92), "/") for a in [script] + list(script_args))
+    # RenderOffscreen, not NullRHI: without a real RHI this engine build cannot spawn
+    # actors from a class (camera) - two different crash paths confirmed on 5.5. The
+    # first boot of a project compiles shaders and takes long; the result lands in the
+    # workspace cache and later runs start in seconds.
+    cmd = [editor, project, f"-ExecCmds=py {arg}",
+           "-stdout", "-FullStdOutLogOutput", "-RenderOffscreen", "-NoSplash",
+           "-Unattended", "-NoZenAutoLaunch"]
+    installed = Path(cfg.ue_engine or "") / "Engine" / "Build" / "InstalledBuild.txt"
+    cmd.append("-ddc=InstalledNoZenLocalFallback" if installed.is_file()
+               else "-ddc=NoZenLocalFallback")
     if dry_run:
         print(" ".join(f'"{c}"' if " " in str(c) else str(c) for c in cmd))
         return cmd
-    info("starting Unreal - this opens the project headless, it can take a minute")
-    run(cmd, check=False)
+    info("запуск Unreal без окна; первый запуск проекта компилирует шейдеры "
+         "и может занять десятки минут, дальше - секунды")
+    run(cmd, check=False, env=_ue_environment(cfg))
     return cmd
 
 
