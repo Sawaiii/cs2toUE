@@ -225,6 +225,60 @@ def pick_clip(entry, rel_deg):
     return entry.get(key) or entry.get("default") or next(iter(entry.values()), None)
 
 
+# ---------------------------------------------------------------- CS2 clip sets
+# Mirrors cs2toue/models.py: clips live per weapon family, with per-gun extras.
+FAMILY_BY_WEAPON = {
+    "knife": "knife", "bayonet": "knife", "daggers": "knife", "karambit": "knife",
+    "grenade": "grenade", "flashbang": "grenade", "molotov": "grenade",
+    "decoy": "grenade", "incendiary": "grenade", "explosive": "grenade",
+    "c4": "equipment", "healthshot": "equipment", "taser": "equipment", "zeus": "equipment",
+}
+PISTOLS = ("glock", "usp", "p2000", "p250", "deagle", "deserteagle", "revolver",
+           "elite", "berettas", "tec9", "fiveseven", "cz75")
+
+
+def _norm(weapon):
+    return "".join(c for c in str(weapon).lower() if c.isalnum())
+
+
+def family_for(weapon):
+    low = _norm(weapon)
+    for token, fam in FAMILY_BY_WEAPON.items():
+        if token in low:
+            return fam
+    if any(p in low for p in PISTOLS):
+        return "pistol"
+    return "rifle"
+
+
+def gun_for(weapon, guns):
+    low = _norm(weapon)
+    if low in guns:
+        return low
+    best = ""
+    for token in guns:
+        if (low.startswith(token) or token.startswith(low)) and len(token) > len(best):
+            best = token
+    return best
+
+
+def clip_set(anims, weapon):
+    """The clip table for the weapon in hand: family set plus that gun's own clips.
+
+    Falls back to the flat {state: clip} shape, so a hand written ue_mapping.json
+    from before the per-family layout keeps working.
+    """
+    if not isinstance(anims, dict):
+        return {}, {}
+    families = anims.get("families")
+    if not isinstance(families, dict):
+        return anims, {}                      # legacy flat mapping
+    fam = family_for(weapon)
+    table = families.get(fam) or families.get("rifle") or {}
+    guns = anims.get("guns") or {}
+    return table, guns.get(gun_for(weapon, guns), {})
+
+
 def movement_segments(rows):
     """[(start, end, state, avg_speed, rel_dir_deg)] with the flicker filtered out.
 
@@ -241,26 +295,28 @@ def movement_segments(rows):
         # a segment is one state in one direction: a run that turns from forward to
         # backpedal must split, or a single clip would cover both
         okey = direction_key(rel) if state in moving else ""
+        wpn = str(row.get("weapon") or "")
         dx = math.cos(math.radians(rel)) if rel is not None else 0.0
         dy = math.sin(math.radians(rel)) if rel is not None else 0.0
-        if segments and segments[-1][2] == state and segments[-1][7] == okey:
+        if (segments and segments[-1][2] == state and segments[-1][7] == okey
+                and segments[-1][8] == wpn):
             g = segments[-1]
             segments[-1] = (g[0], t, state, g[3] + speed, g[4] + 1,
-                            g[5] + dx, g[6] + dy, okey)
+                            g[5] + dx, g[6] + dy, okey, wpn)
         else:
-            segments.append((t, t, state, speed, 1, dx, dy, okey))
+            segments.append((t, t, state, speed, 1, dx, dy, okey, wpn))
     merged = []
     for seg in segments:
         if merged and (seg[1] - seg[0]) < MIN_SEGMENT and seg[2] != "death":
             g = merged[-1]
             merged[-1] = (g[0], seg[1], g[2], g[3] + seg[3], g[4] + seg[4],
-                          g[5] + seg[5], g[6] + seg[6], g[7])
+                          g[5] + seg[5], g[6] + seg[6], g[7], g[8])
         else:
             merged.append(seg)
     out = []
     for g in merged:
         rel = math.degrees(math.atan2(g[6], g[5])) if (abs(g[5]) + abs(g[6])) > 1e-6 else None
-        out.append((g[0], g[1], g[2], g[3] / max(1, g[4]), rel))
+        out.append((g[0], g[1], g[2], g[3] / max(1, g[4]), rel, g[8]))
     return out
 
 
@@ -275,15 +331,30 @@ def add_animation_track(seq, binding, rows, fps, anims, duration):
         return 0
 
     made = 0
-    for start, end, state, speed, rel in movement_segments(rows):
-        asset_path = pick_clip(anims.get(state), rel) or pick_clip(anims.get("idle"), None)
+    for start, end, state, speed, rel, weapon in movement_segments(rows):
+        table, gun = clip_set(anims, weapon)
+        if state == "death":
+            # CS2 has no death clip - kills are ragdoll. Holding the last pose is
+            # honest; inventing a lie-down from an unrelated clip is not.
+            continue
+        if state == "jump":
+            asset_path = (pick_clip(table.get("jump"), rel)
+                          or table.get("jump_stand")
+                          or pick_clip(table.get("air"), rel)
+                          or table.get("air_stand"))
+        elif state == "idle":
+            asset_path = gun.get("idle") or table.get("idle")
+        elif state == "crouch_idle":
+            asset_path = table.get("crouch_idle") or gun.get("idle") or table.get("idle")
+        else:
+            asset_path = pick_clip(table.get(state), rel)
+        if not asset_path:
+            asset_path = gun.get("idle") or table.get("idle")
         if not asset_path:
             continue
         anim = unreal.EditorAssetLibrary.load_asset(asset_path)
         if anim is None:
             continue
-        if state == "death":
-            end = duration          # stay down until the end of the clip
         if end <= start:
             end = start + 1.0 / fps
         section = track.add_section()
@@ -312,29 +383,39 @@ def _set_anim_params(section, anim, rate):
         unreal.log_warning("cs2toUE: could not set animation params ({})".format(exc))
 
 
-def add_fire_overlay(binding, fire_times, anims, fps, duration):
+def add_fire_overlay(binding, fire_times, anims, fps, duration, rows=None):
     """Short full-weight fire sections on a second animation track.
 
     Overlapping tracks blend in Sequencer, so the shot pose flashes over the
     locomotion - the same idea as the game layering its fire gesture.
     """
-    clip_path = anims.get("fire")
-    if isinstance(clip_path, dict):
-        clip_path = clip_path.get("default") or next(iter(clip_path.values()), None)
-    if not clip_path or not fire_times:
+    if not fire_times:
         return 0
-    anim = unreal.EditorAssetLibrary.load_asset(clip_path)
-    if anim is None:
-        return 0
-    try:
-        track = binding.add_track(unreal.MovieSceneSkeletalAnimationTrack)
-    except Exception:
-        return 0
+    # which gun was in hand at each shot: CS2 keeps shoot_ak, shoot_awp, ... apart
+    timeline = [(float(r["time"]), r.get("weapon") or "") for r in (rows or [])]
+    track = None
     made = 0
     last_end = -1.0
     for t in sorted(fire_times):
         if t < last_end:                       # spraying: merge into one section
             continue
+        weapon = ""
+        for rt, rw in timeline:
+            if rt > t:
+                break
+            weapon = rw
+        table, gun = clip_set(anims, weapon)
+        clip_path = gun.get("shoot") or gun.get("throw") or table.get("shoot")
+        if not clip_path:
+            continue
+        anim = unreal.EditorAssetLibrary.load_asset(clip_path)
+        if anim is None:
+            continue
+        if track is None:
+            try:
+                track = binding.add_track(unreal.MovieSceneSkeletalAnimationTrack)
+            except Exception:
+                return 0
         end = min(duration, t + 0.25)
         section = track.add_section()
         section.set_range_seconds(max(0.0, t - 0.02), end)
@@ -766,7 +847,7 @@ def main(argv):
             if anims and int(opts["animations"]):
                 n = add_animation_track(seq, binding, rows, fps, anims, duration)
                 fires = fire_by_steamid.get(str(actor.get("steamid", "")), [])
-                n_fire = add_fire_overlay(binding, fires, anims, fps, duration)
+                n_fire = add_fire_overlay(binding, fires, anims, fps, duration, rows)
                 if n or n_fire:
                     unreal.log("cs2toUE: {} - {} animation sections, {} fire".format(
                         label, n, n_fire))

@@ -266,67 +266,155 @@ def remove(cfg, name: str) -> None:
 
 # ------------------------------------------------------------------ ue mapping
 
-# How the sequence builder picks clips. The game blends an 8-way locomotion set by
-# movement direction relative to facing - the mapping mirrors that: a state maps either
-# to one clip, or to {"default": ..., "n": ..., "ne": ...} with per-direction clips
-# matched from whatever the model actually ships.
-STATE_KEYWORDS = {
-    "death": ("death", "die", "dead"),
-    "jump": ("jump", "airborne", "air_", "inair", "falling"),
-    "crouch_walk": ("crouch_walk", "crouchwalk", "duck_walk", "crouch_move", "crouchrun"),
-    "crouch_idle": ("crouch_idle", "crouchidle", "duck_idle", "crouch"),
-    "run": ("run", "sprint"),
-    "walk": ("walk",),
-    "fire": ("fire", "shoot", "attack", "shot"),
-    "idle": ("idle", "stand"),
+# How the sequence builder picks clips.
+#
+# Verified against a real CS2 export (ctm_sas, 2062 clips): the game does NOT keep one
+# locomotion set. Clips live per weapon family
+#
+#     animation/anims/world/<family>/<set>/run_ne_rifle
+#
+# with family in rifle | pistol | knife | grenade | equipment, eight directions each,
+# and per-gun clips on top (shoot_ak, idle_m4a4, draw_awp). There is no death clip at
+# all - CS2 kills are ragdoll, so a "death" animation simply does not exist and the
+# builder holds the last pose instead of inventing one.
+DIRECTIONS = ("n", "ne", "e", "se", "s", "sw", "w", "nw")
+
+# state -> clip name prefix inside a family
+FAMILY_STATES = {
+    "run": "run_{dir}_",
+    "walk": "walk_{dir}_",
+    "crouch_walk": "crouch_{dir}_",
+    "jump": "jump_{dir}_",
+    "air": "inair_{dir}_",
 }
-DIRECTION_TOKENS = {
-    "n": ("_n", "_fwd", "_forward", "_f"),
-    "ne": ("_ne", "_fr",),
-    "e": ("_e", "_right", "_r"),
-    "se": ("_se", "_br",),
-    "s": ("_s", "_back", "_bwd", "_b"),
-    "sw": ("_sw", "_bl",),
-    "w": ("_w", "_left", "_l"),
-    "nw": ("_nw", "_fl",),
+FAMILY_SINGLE = {
+    "idle": ("idle_{fam}", "idle_"),
+    "crouch_idle": ("idle_crouch_{fam}", "idle_crouch_"),
+    "jump_stand": ("jump_stand_{fam}",),
+    "air_stand": ("inair_stand_{fam}",),
+}
+
+# what the demo calls a weapon -> which family its animations live in
+FAMILY_BY_WEAPON = {
+    "knife": "knife", "bayonet": "knife", "daggers": "knife", "karambit": "knife",
+    "grenade": "grenade", "flashbang": "grenade", "molotov": "grenade",
+    "decoy": "grenade", "incendiary": "grenade", "explosive": "grenade",
+    "c4": "equipment", "healthshot": "equipment", "taser": "equipment", "zeus": "equipment",
+}
+PISTOLS = ("glock", "usp", "p2000", "p250", "deagle", "deserteagle", "revolver",
+           "elite", "berettas", "tec9", "fiveseven", "cz75", "cz75a")
+
+# the demo prints display names, CS2 names its clips differently
+GUN_ALIASES = {
+    "deserteagle": "deagle", "dualberettas": "elite", "r8revolver": "revolver",
+    "m4a1s": "m4a1s", "m4a1silencer": "m4a1s", "usps": "usp", "uspsilencer": "usp",
+    "ak47": "ak", "mp5sd": "mp5sd", "sawedoff": "sawedoff", "ssg08": "ssg08",
+    "scar20": "scar20", "sg553": "sg556", "galilar": "galilar", "galil": "galilar",
+    "mag7": "mag7", "xm1014": "xm1014", "negev": "negev", "m249": "m249",
+    "ump45": "ump45", "pp19bizon": "bizon", "bizon": "bizon", "mac10": "mac10",
+    "shadowdaggers": "knife", "butterflyknife": "knife", "huntsmanknife": "knife",
 }
 
 
-def _directional(names_low, family_keys):
-    """Direction variants of one movement clip family, e.g. run_n / run_ne / ..."""
+def _family_for(weapon: str) -> str:
+    """rifle is the default: it is where CS2 keeps rifles, smgs and shotguns alike."""
+    low = re.sub(r"[^a-z0-9]", "", str(weapon).lower())
+    for token, fam in FAMILY_BY_WEAPON.items():
+        if token in low:
+            return fam
+    if any(p in low for p in PISTOLS):
+        return "pistol"
+    return "rifle"
+
+
+def _gun_token(weapon: str) -> str:
+    """Demo weapon name -> the token CS2 uses in clip names (Desert Eagle -> deagle)."""
+    low = re.sub(r"[^a-z0-9]", "", str(weapon).lower())
+    return GUN_ALIASES.get(low, low)
+
+
+def resolve_gun(weapon: str, guns) -> str:
+    """Best gun token for a demo weapon name among the ones a model actually ships.
+
+    Exact hit, then alias, then the longest token that is a prefix of the name:
+    "glock18" finds "glock" without another table entry.
+    """
+    low = re.sub(r"[^a-z0-9]", "", str(weapon).lower())
+    for cand in (low, GUN_ALIASES.get(low, "")):
+        if cand and cand in guns:
+            return cand
+    best = ""
+    for token in guns:
+        if (low.startswith(token) or token.startswith(low)) and len(token) > len(best):
+            best = token
+    return best
+
+
+def _by_family(names: list) -> dict:
     out = {}
-    for direction, tokens in DIRECTION_TOKENS.items():
-        for name, low in names_low:
-            # the candidate must belong to the same family: walk_* never borrows run_*
-            if not any(k in low for k in family_keys):
-                continue
-            for tok in tokens:
-                if low.endswith(tok) or (tok + "_") in low:
-                    out[direction] = name
-                    break
-            if direction in out:
-                break
+    for full in names:
+        m = re.search(r"/world/([a-z0-9_]+)/", full)
+        if m:
+            out.setdefault(m.group(1), []).append(full)
     return out
 
 
 def match_animations(names: list) -> dict:
-    """Map movement states onto the clips a model ships, the way the game uses them."""
-    out = {}
-    low = [(n, n.lower()) for n in names]
-    for state, keys in STATE_KEYWORDS.items():
-        hit = None
-        for key in keys:
-            hit = next((n for n, l in low if key in l), None)
-            if hit:
-                break
-        if not hit:
-            continue
-        if state in ("run", "walk", "crouch_walk"):
-            dirs = _directional(low, keys)
-            out[state] = {"default": hit, **dirs} if dirs else hit
-        else:
-            out[state] = hit
-    return out
+    """Group a model's clips the way CS2 itself does.
+
+    Returns {"families": {fam: {state: clip | {dir: clip}}},
+             "guns":     {gun_token: {"shoot": clip, "idle": clip, "draw": clip}}}
+    so the sequence builder can pick by the weapon a player is actually holding.
+    """
+    families, guns = {}, {}
+    for fam, clips in _by_family(names).items():
+        tail = {c.rsplit("/", 1)[-1]: c for c in clips}
+        entry = {}
+        for state, template in FAMILY_STATES.items():
+            found = {}
+            for d in DIRECTIONS:
+                prefix = template.format(dir=d)
+                hit = next((full for name, full in tail.items()
+                            if name.startswith(prefix) and fam in name), None)
+                if hit:
+                    found[d] = hit
+            if found:
+                found["default"] = found.get("n") or next(iter(found.values()))
+                entry[state] = found
+        for state, candidates in FAMILY_SINGLE.items():
+            for cand in candidates:
+                want = cand.format(fam=fam)
+                hit = tail.get(want) or next(
+                    (full for name, full in tail.items()
+                     if name.startswith(want) and name.endswith(fam)), None)
+                if hit:
+                    entry[state] = hit
+                    break
+        if entry:
+            families[fam] = entry
+
+        for name, full in tail.items():
+            for kind in ("shoot", "idle", "draw", "throw"):
+                m = re.fullmatch(kind + r"_([a-z0-9]+)", name)
+                if m and m.group(1) not in ("crouch", fam):
+                    guns.setdefault(m.group(1), {})[kind] = full
+    return {"families": families, "guns": guns}
+
+
+def _asset_paths(node, base: str):
+    """Turn every clip name in the nested match_animations result into an asset path.
+
+    The structure is {"families": {...}, "guns": {...}} several levels deep, so this
+    walks it instead of assuming a flat table - a plain dict comprehension used to
+    iterate the *characters* of the path string.
+    """
+    if isinstance(node, dict):
+        return {k: _asset_paths(v, base) for k, v in node.items()}
+    if isinstance(node, str):
+        # Unreal names the AnimSequence after the clip's file name
+        leaf = node.rsplit("/", 1)[-1]
+        return f"{base}/{leaf}.{leaf}"
+    return node
 
 
 def write_ue_mapping(cfg, scene_dir, package: str = "/Game/cs2toUE/Models") -> Path:
@@ -350,8 +438,7 @@ def write_ue_mapping(cfg, scene_dir, package: str = "/Game/cs2toUE/Models") -> P
         base = f"{package}/{pick.name}"
         mapping[f"player.{team}"] = {
             "skeletal_mesh": f"{base}/{pick.name}.{pick.name}",
-            "animations": {state: f"{base}/{clip}.{clip}"
-                           for state, clip in match_animations(pick.animations).items()},
+            "animations": _asset_paths(match_animations(pick.animations), base),
             "model": pick.name,
         }
     # weapons: one entry per exported weapon model, so the sequence builder can put
