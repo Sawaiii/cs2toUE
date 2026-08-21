@@ -26,6 +26,7 @@ PAK_CANDIDATES = ("game/csgo/pak01_dir.vpk", "game/csgo_core/pak01_dir.vpk",
                   "game/csgo_imported/pak01_dir.vpk")
 
 PLAYER_PATTERNS = (
+    re.compile(r"agents/models/.+\.vmdl_c$", re.I),      # CS2 keeps agents here
     re.compile(r"characters/models/.+\.vmdl_c$", re.I),
     re.compile(r"models/player/.+\.vmdl_c$", re.I),
 )

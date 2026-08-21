@@ -25,7 +25,7 @@ DEFAULTS = {
 
 # helper geometry nobody wants in a cinematic level - the by-hand workflow deletes
 # these after import, one by one
-CLEAN_TOKENS = ("skybox", "3dsky", "tools_", "toolsclip", "clip_", "_clip",
+CLEAN_TOKENS = ("physics", "skybox", "3dsky", "tools_", "toolsclip", "clip_", "_clip",
                 "trigger", "navmesh", "_nav", "occluder", "lightprobe",
                 "skip", "hint", "blocklight", "playerclip")
 
@@ -108,6 +108,10 @@ def main(argv):
             if actor:
                 actor.set_actor_label("cs2map_" + asset.get_name())
                 actor.set_actor_scale3d(unreal.Vector(1, 1, 1))
+    try:
+        unreal.EditorLoadingAndSavingUtils.save_dirty_packages(True, True)
+    except Exception as exc:
+        unreal.log_warning("cs2toUE: could not save ({})".format(exc))
     unreal.log("cs2toUE: map import done")
 
 
