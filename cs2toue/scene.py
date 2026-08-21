@@ -23,7 +23,8 @@ FORMAT = "cs2toue.scene"
 FORMAT_VERSION = 1
 
 TRACK_COLUMNS = ["tick", "time", "x", "y", "z", "pitch", "yaw", "roll",
-                 "fov", "alive", "health", "weapon", "duck", "speed"]
+                 "fov", "alive", "health", "weapon", "duck", "speed",
+                 "air", "move_yaw"]
 
 
 @dataclass

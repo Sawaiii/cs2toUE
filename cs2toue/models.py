@@ -234,27 +234,66 @@ def remove(cfg, name: str) -> None:
 
 # ------------------------------------------------------------------ ue mapping
 
-# how the sequence builder picks a clip for a movement state
+# How the sequence builder picks clips. The game blends an 8-way locomotion set by
+# movement direction relative to facing - the mapping mirrors that: a state maps either
+# to one clip, or to {"default": ..., "n": ..., "ne": ...} with per-direction clips
+# matched from whatever the model actually ships.
 STATE_KEYWORDS = {
     "death": ("death", "die", "dead"),
-    "crouch_walk": ("crouch_walk", "crouchwalk", "duck_walk", "crouch_move"),
+    "jump": ("jump", "airborne", "air_", "inair", "falling"),
+    "crouch_walk": ("crouch_walk", "crouchwalk", "duck_walk", "crouch_move", "crouchrun"),
     "crouch_idle": ("crouch_idle", "crouchidle", "duck_idle", "crouch"),
     "run": ("run", "sprint"),
     "walk": ("walk",),
+    "fire": ("fire", "shoot", "attack", "shot"),
     "idle": ("idle", "stand"),
+}
+DIRECTION_TOKENS = {
+    "n": ("_n", "_fwd", "_forward", "_f"),
+    "ne": ("_ne", "_fr",),
+    "e": ("_e", "_right", "_r"),
+    "se": ("_se", "_br",),
+    "s": ("_s", "_back", "_bwd", "_b"),
+    "sw": ("_sw", "_bl",),
+    "w": ("_w", "_left", "_l"),
+    "nw": ("_nw", "_fl",),
 }
 
 
+def _directional(names_low, family_keys):
+    """Direction variants of one movement clip family, e.g. run_n / run_ne / ..."""
+    out = {}
+    for direction, tokens in DIRECTION_TOKENS.items():
+        for name, low in names_low:
+            # the candidate must belong to the same family: walk_* never borrows run_*
+            if not any(k in low for k in family_keys):
+                continue
+            for tok in tokens:
+                if low.endswith(tok) or (tok + "_") in low:
+                    out[direction] = name
+                    break
+            if direction in out:
+                break
+    return out
+
+
 def match_animations(names: list) -> dict:
-    """Map movement states onto whatever animation clips a model happens to ship."""
+    """Map movement states onto the clips a model ships, the way the game uses them."""
     out = {}
     low = [(n, n.lower()) for n in names]
     for state, keys in STATE_KEYWORDS.items():
+        hit = None
         for key in keys:
             hit = next((n for n, l in low if key in l), None)
             if hit:
-                out[state] = hit
                 break
+        if not hit:
+            continue
+        if state in ("run", "walk", "crouch_walk"):
+            dirs = _directional(low, keys)
+            out[state] = {"default": hit, **dirs} if dirs else hit
+        else:
+            out[state] = hit
     return out
 
 
@@ -283,6 +322,18 @@ def write_ue_mapping(cfg, scene_dir, package: str = "/Game/cs2toUE/Models") -> P
                            for state, clip in match_animations(pick.animations).items()},
             "model": pick.name,
         }
+    # weapons: one entry per exported weapon model, so the sequence builder can put
+    # the right gun into the right hands at the right time
+    for b in lib.values():
+        if b.kind != "weapon":
+            continue
+        short = b.name.lower()
+        for prefix in ("weapon_", "v_", "w_"):
+            if short.startswith(prefix):
+                short = short[len(prefix):]
+        base = f"{package}/{b.name}"
+        mapping[f"weapon.{short}"] = f"{base}/{b.name}.{b.name}"
+    mapping.setdefault("weapon_bone", "hand_R")
     mapping.setdefault("grenade", "/Engine/BasicShapes/Sphere.Sphere")
     mapping.setdefault("default", "/Engine/BasicShapes/Cylinder.Cylinder")
     path = Path(scene_dir) / "ue_mapping.json"

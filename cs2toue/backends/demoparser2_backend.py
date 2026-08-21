@@ -153,7 +153,7 @@ def parse(demo_path, demo_info, out_dir, tick_start=0, tick_end=0, step=1,
         actor_id = f"player_{pid}"
         # column arrays instead of itertuples: faster, and immune to pandas renaming
         col = _columns(g, ("tick", "X", "Y", "Z", "pitch", "yaw", "health", "is_alive",
-                           "active_weapon_name", "duck_amount",
+                           "active_weapon_name", "duck_amount", "is_airborne",
                            "velocity_X", "velocity_Y", "velocity_Z"))
         rows = []
         prev = None
@@ -161,15 +161,22 @@ def parse(demo_path, demo_info, out_dir, tick_start=0, tick_end=0, step=1,
             tick = int(_at(col["tick"], i, 0))
             x, y, z = (_num(_at(col["X"], i)), _num(_at(col["Y"], i)), _num(_at(col["Z"], i)))
             # speed drives the animation choice in Unreal; prefer the real velocity prop
+            move_yaw = ""
             if col["velocity_X"] is not None:
-                speed = math.hypot(_num(_at(col["velocity_X"], i)),
-                                   _num(_at(col["velocity_Y"], i)))
+                vx, vy = _num(_at(col["velocity_X"], i)), _num(_at(col["velocity_Y"], i))
+                speed = math.hypot(vx, vy)
+                if speed > 1.0:
+                    move_yaw = round(math.degrees(math.atan2(vy, vx)), 2)
             elif prev is not None:
                 dt = (tick - prev[0]) / tickrate
-                speed = math.hypot(x - prev[1], y - prev[2]) / dt if dt > 0 else 0.0
+                dx, dy = x - prev[1], y - prev[2]
+                speed = math.hypot(dx, dy) / dt if dt > 0 else 0.0
+                if speed > 1.0:
+                    move_yaw = round(math.degrees(math.atan2(dy, dx)), 2)
             else:
                 speed = 0.0
             prev = (tick, x, y, z)
+            airborne = _at(col["is_airborne"], i, False)
             duck = _num(_at(col["duck_amount"], i), 0.0)
             weapon = _text(_at(col["active_weapon_name"], i, ""))
             if weapon:
@@ -186,6 +193,8 @@ def parse(demo_path, demo_info, out_dir, tick_start=0, tick_end=0, step=1,
                 weapon,
                 round(duck, 3),
                 round(speed, 2),
+                1 if airborne else 0,
+                move_yaw,
             ])
         if not rows:
             continue
@@ -219,7 +228,7 @@ def parse(demo_path, demo_info, out_dir, tick_start=0, tick_end=0, step=1,
                         tick, round((tick - t0) / tickrate, 6),
                         round(_num(_at(col["X"], i)), 4), round(_num(_at(col["Y"], i)), 4),
                         round(_num(_at(col["Z"], i)), 4),
-                        0.0, 0.0, 0.0, "", 1, 0, gtype, 0.0, 0.0,
+                        0.0, 0.0, 0.0, "", 1, 0, gtype, 0.0, 0.0, 0, "",
                     ])
                 if len(rows) < 2:
                     continue

@@ -250,7 +250,7 @@ def build(rig: str, target_rows, other_rows=(), fps: float = 30.0, smooth: float
         tick = int(target_rows[i][I_TICK]) if i < len(target_rows) else i
         row = [tick, round(t, 6), round(xs[i], 4), round(ys[i], 4), round(zs[i], 4),
                round(pitches[i], 4), round(yaws[i], 4), 0.0, round(opt["fov"], 3),
-               1, 0, "camera", 0.0, 0.0]
+               1, 0, "camera", 0.0, 0.0, 0, ""]
         assert len(row) == len(TRACK_COLUMNS)
         rows.append(row)
         frames.append(camio.CamFrame(t, xs[i], ys[i], zs[i],

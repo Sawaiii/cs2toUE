@@ -38,6 +38,7 @@ DEFAULTS = {
     "camera": 1,
     "visibility": 1,                     # hide actors while dead
     "animations": 1,                     # lay animation sections for skeletal models
+    "weapons": 1,                        # attach mapped weapon models to hands
     "effects": 1,                        # smokes, molotovs, explosions, flashes
     "tracers": 1,                        # one beam per shot (can be a lot)
     "max_effects": 1500,                 # hard cap so a long clip cannot flood the level
@@ -132,7 +133,10 @@ def spawn_actor(asset_path, location, rotation, label, tags):
     return actor
 
 
-def add_transform_track(seq, binding, rows, fps, scale, z_offset, duration):
+def add_transform_track(seq, binding, rows, fps, scale, z_offset, duration,
+                        yaw_only=False):
+    """yaw_only: player bodies turn but never pitch - aim pitch belongs to the aim
+    layer, and a body tilted by the view angle looks broken."""
     track = binding.add_track(unreal.MovieScene3DTransformTrack)
     section = track.add_section()
     section.set_range_seconds(0.0, max(duration, 1.0 / fps))
@@ -148,6 +152,8 @@ def add_transform_track(seq, binding, rows, fps, scale, z_offset, duration):
         pos = to_ue_pos(float(row["x"]), float(row["y"]), float(row["z"]), scale, z_offset)
         pitch, yaw, roll = to_ue_rot(float(row["pitch"] or 0.0), float(row["yaw"] or 0.0),
                                      float(row["roll"] or 0.0))
+        if yaw_only:
+            pitch = roll = 0.0
         pitch = unwrap(prev_pitch, pitch)
         yaw = unwrap(prev_yaw, yaw)
         roll = unwrap(prev_roll, roll)
@@ -174,6 +180,8 @@ MIN_SEGMENT = 0.25          # seconds - shorter states are absorbed by their nei
 def row_state(row):
     if str(row.get("alive", "1")) in ("0", "False", "false"):
         return "death"
+    if str(row.get("air", "0")) == "1":
+        return "jump"
     duck = float(row.get("duck") or 0.0)
     speed = float(row.get("speed") or 0.0)
     if duck > 0.5:
@@ -185,27 +193,75 @@ def row_state(row):
     return "idle"
 
 
+def rel_move_angle(row):
+    """Movement direction relative to facing, degrees. None when standing still.
+
+    0 = forward, positive = to the left (source yaw grows counter-clockwise); this is
+    what picks the strafe clip - a player running sideways must not play run-forward.
+    """
+    raw = row.get("move_yaw")
+    if raw in (None, ""):
+        return None
+    rel = (float(raw) - float(row.get("yaw") or 0.0) + 180.0) % 360.0 - 180.0
+    return rel
+
+
+DIR_ORDER = ["n", "nw", "w", "sw", "s", "se", "e", "ne"]
+
+
+def direction_key(rel_deg):
+    """Octant name for a relative movement angle (n = forward, e = right)."""
+    if rel_deg is None:
+        return "default"
+    idx = int(round(((rel_deg + 360.0) % 360.0) / 45.0)) % 8
+    return DIR_ORDER[idx]
+
+
+def pick_clip(entry, rel_deg):
+    """A state maps to one clip or to a per-direction dict - resolve either."""
+    if not isinstance(entry, dict):
+        return entry
+    key = direction_key(rel_deg)
+    return entry.get(key) or entry.get("default") or next(iter(entry.values()), None)
+
+
 def movement_segments(rows):
-    """[(start_time, end_time, state, average_speed)] with the flicker filtered out."""
+    """[(start, end, state, avg_speed, rel_dir_deg)] with the flicker filtered out.
+
+    The direction is averaged as a vector (circular mean), so a segment oscillating
+    around 180 does not collapse to a bogus 0.
+    """
+    moving = ("run", "walk", "crouch_walk")
     segments = []
     for row in rows:
         t = float(row["time"])
         state = row_state(row)
         speed = float(row.get("speed") or 0.0)
-        if segments and segments[-1][2] == state:
-            seg = segments[-1]
-            segments[-1] = (seg[0], t, state, (seg[3] * seg[4] + speed) / (seg[4] + 1), seg[4] + 1)
+        rel = rel_move_angle(row)
+        # a segment is one state in one direction: a run that turns from forward to
+        # backpedal must split, or a single clip would cover both
+        okey = direction_key(rel) if state in moving else ""
+        dx = math.cos(math.radians(rel)) if rel is not None else 0.0
+        dy = math.sin(math.radians(rel)) if rel is not None else 0.0
+        if segments and segments[-1][2] == state and segments[-1][7] == okey:
+            g = segments[-1]
+            segments[-1] = (g[0], t, state, g[3] + speed, g[4] + 1,
+                            g[5] + dx, g[6] + dy, okey)
         else:
-            segments.append((t, t, state, speed, 1))
-    # absorb very short segments into the previous one
+            segments.append((t, t, state, speed, 1, dx, dy, okey))
     merged = []
     for seg in segments:
         if merged and (seg[1] - seg[0]) < MIN_SEGMENT and seg[2] != "death":
-            prev = merged[-1]
-            merged[-1] = (prev[0], seg[1], prev[2], prev[3], prev[4])
+            g = merged[-1]
+            merged[-1] = (g[0], seg[1], g[2], g[3] + seg[3], g[4] + seg[4],
+                          g[5] + seg[5], g[6] + seg[6], g[7])
         else:
             merged.append(seg)
-    return [(s[0], s[1], s[2], s[3]) for s in merged]
+    out = []
+    for g in merged:
+        rel = math.degrees(math.atan2(g[6], g[5])) if (abs(g[5]) + abs(g[6])) > 1e-6 else None
+        out.append((g[0], g[1], g[2], g[3] / max(1, g[4]), rel))
+    return out
 
 
 def add_animation_track(seq, binding, rows, fps, anims, duration):
@@ -219,8 +275,8 @@ def add_animation_track(seq, binding, rows, fps, anims, duration):
         return 0
 
     made = 0
-    for start, end, state, speed in movement_segments(rows):
-        asset_path = anims.get(state) or anims.get("idle")
+    for start, end, state, speed, rel in movement_segments(rows):
+        asset_path = pick_clip(anims.get(state), rel) or pick_clip(anims.get("idle"), None)
         if not asset_path:
             continue
         anim = unreal.EditorAssetLibrary.load_asset(asset_path)
@@ -254,6 +310,108 @@ def _set_anim_params(section, anim, rate):
         section.set_editor_property("params", params)
     except Exception as exc:
         unreal.log_warning("cs2toUE: could not set animation params ({})".format(exc))
+
+
+def add_fire_overlay(binding, fire_times, anims, fps, duration):
+    """Short full-weight fire sections on a second animation track.
+
+    Overlapping tracks blend in Sequencer, so the shot pose flashes over the
+    locomotion - the same idea as the game layering its fire gesture.
+    """
+    clip_path = anims.get("fire")
+    if isinstance(clip_path, dict):
+        clip_path = clip_path.get("default") or next(iter(clip_path.values()), None)
+    if not clip_path or not fire_times:
+        return 0
+    anim = unreal.EditorAssetLibrary.load_asset(clip_path)
+    if anim is None:
+        return 0
+    try:
+        track = binding.add_track(unreal.MovieSceneSkeletalAnimationTrack)
+    except Exception:
+        return 0
+    made = 0
+    last_end = -1.0
+    for t in sorted(fire_times):
+        if t < last_end:                       # spraying: merge into one section
+            continue
+        end = min(duration, t + 0.25)
+        section = track.add_section()
+        section.set_range_seconds(max(0.0, t - 0.02), end)
+        _set_anim_params(section, anim, 1.0)
+        last_end = end
+        made += 1
+        if made >= 200:
+            break
+    return made
+
+
+def weapon_spans(rows, min_seconds=0.2):
+    """[(weapon_key, start, end)] - which gun is in the hands when."""
+    spans = []
+    for row in rows:
+        w = str(row.get("weapon") or "").strip().lower()
+        w = w.replace(" ", "_")
+        for prefix in ("weapon_",):
+            if w.startswith(prefix):
+                w = w[len(prefix):]
+        t = float(row["time"])
+        if spans and spans[-1][0] == w:
+            spans[-1][2] = t
+        else:
+            spans.append([w, t, t])
+    return [(w, a, b) for w, a, b in spans if w and (b - a) >= min_seconds]
+
+
+def attach_weapons(seq, player_binding, actor, rows, mapping, fps, duration, missing):
+    """Spawn the guns a player holds and ride them on the hand bone.
+
+    Only weapons present in the mapping get an actor - a wrong gun is worse than no
+    gun, so unknown ones are just counted and reported once.
+    """
+    socket = str(mapping.get("weapon_bone", "hand_R"))
+    made = 0
+    for weapon, start, end in weapon_spans(rows):
+        asset_path = mapping.get("weapon." + weapon)
+        if not asset_path:
+            missing.add(weapon)
+            continue
+        asset = unreal.EditorAssetLibrary.load_asset(asset_path)
+        if asset is None:
+            missing.add(weapon)
+            continue
+        try:
+            sub = editor_actor_subsystem()
+            weapon_actor = (sub.spawn_actor_from_object(asset, unreal.Vector(0, 0, 0),
+                                                  unreal.Rotator(0, 0, 0)) if sub else None)
+            if weapon_actor is None:
+                continue
+            weapon_actor.set_actor_label("wpn_{}_{}".format(weapon, actor.get("name", "")))
+            weapon_actor.set_folder_path("cs2toUE/Weapons")
+            wb = seq.add_possessable(weapon_actor)
+            attach = wb.add_track(unreal.MovieScene3DAttachTrack)
+            section = attach.add_section()
+            section.set_range_seconds(start, max(end, start + 1.0 / fps))
+            section.set_constraint_binding_id(
+                unreal.MovieSceneSequenceExtensions.get_binding_id(seq, player_binding))
+            for prop in ("attach_socket_name",):
+                try:
+                    section.set_editor_property(prop, socket)
+                except Exception:
+                    pass
+            vis = wb.add_track(unreal.MovieSceneVisibilityTrack)
+            vsec = vis.add_section()
+            vsec.set_range_seconds(0.0, duration)
+            ch = vsec.get_all_channels()[0]
+            ch.add_key(unreal.FrameNumber(0), False, 0.0, TIME_UNIT.DISPLAY_RATE)
+            ch.add_key(unreal.FrameNumber(int(round(start * fps))), True, 0.0,
+                       TIME_UNIT.DISPLAY_RATE)
+            ch.add_key(unreal.FrameNumber(int(round(end * fps))), False, 0.0,
+                       TIME_UNIT.DISPLAY_RATE)
+            made += 1
+        except Exception as exc:
+            unreal.log_warning("cs2toUE: weapon {} skipped ({})".format(weapon, exc))
+    return made
 
 
 def add_visibility_track(seq, binding, rows, fps):
@@ -516,8 +674,22 @@ def main(argv):
             unreal.log_error("cs2toUE: could not load level {}".format(opts["level"]))
             return
 
+    # a leftover asset from an interrupted run can wedge create_asset - rebuilds
+    # always start from a clean one
+    asset_path = "{}/{}".format(opts["package"].rstrip("/"), seq_name)
+    try:
+        if unreal.EditorAssetLibrary.does_asset_exist(asset_path):
+            unreal.EditorAssetLibrary.delete_asset(asset_path)
+            unreal.log("cs2toUE: previous {} removed".format(asset_path))
+    except Exception:
+        pass
     seq = unreal.AssetToolsHelpers.get_asset_tools().create_asset(
         seq_name, opts["package"], unreal.LevelSequence, unreal.LevelSequenceFactoryNew())
+    if seq is None:
+        unreal.log_error("cs2toUE: could not create the sequence asset (does it exist "
+                         "and is it open somewhere?)")
+        return
+    unreal.log("cs2toUE: sequence asset ready")
     seq.set_display_rate(unreal.FrameRate(int(round(fps)), 1))
 
     # ---- load all tracks first so the sequence length is known up front
@@ -541,11 +713,20 @@ def main(argv):
         loaded.append((actor, rows))
 
     duration = max(duration, 1.0 / fps)
+    unreal.log("cs2toUE: {} tracks loaded, duration {:.2f}s".format(len(loaded), duration))
     seq.set_playback_start_seconds(0.0)
     seq.set_playback_end_seconds(duration)
 
     total_keys = 0
     cameras = []
+    weapons_placed = 0
+    weapons_missing = set()
+    fire_by_steamid = {}
+    for ev in scene.get("events", []):
+        if ev.get("type") == "weapon_fire":
+            sid = str(ev.get("data", {}).get("user_steamid", ""))
+            if sid:
+                fire_by_steamid.setdefault(sid, []).append(float(ev["time"]))
     with unreal.ScopedSlowTask(len(loaded), "cs2toUE: building sequence") as task:
         # no dialog in headless mode: Slate is absent under -unattended and the
         # attempt to open one brings the whole editor down
@@ -579,13 +760,27 @@ def main(argv):
             if spawned is None:
                 continue
             binding = seq.add_possessable(spawned)
-            total_keys += add_transform_track(seq, binding, rows, fps, scale, z_offset, duration)
+            total_keys += add_transform_track(seq, binding, rows, fps, scale, z_offset,
+                                              duration,
+                                              yaw_only=(actor["kind"] == "player"))
             if anims and int(opts["animations"]):
                 n = add_animation_track(seq, binding, rows, fps, anims, duration)
-                if n:
-                    unreal.log("cs2toUE: {} - {} animation sections".format(label, n))
+                fires = fire_by_steamid.get(str(actor.get("steamid", "")), [])
+                n_fire = add_fire_overlay(binding, fires, anims, fps, duration)
+                if n or n_fire:
+                    unreal.log("cs2toUE: {} - {} animation sections, {} fire".format(
+                        label, n, n_fire))
+            if actor["kind"] == "player" and int(opts["weapons"]):
+                weapons_placed += attach_weapons(seq, binding, actor, rows, mapping,
+                                                 fps, duration, weapons_missing)
             if int(opts["visibility"]) and actor["kind"] == "player":
                 add_visibility_track(seq, binding, rows, fps)
+
+    if weapons_placed or weapons_missing:
+        unreal.log("cs2toUE: weapons in hands: {} placed{}".format(
+            weapons_placed,
+            "; no model mapped for: " + ", ".join(sorted(weapons_missing))
+            if weapons_missing else ""))
 
     if cameras:
         want = str(opts["active_camera"]).strip().lower()
