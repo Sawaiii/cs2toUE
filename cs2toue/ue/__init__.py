@@ -10,3 +10,4 @@ UE_DIR = UE_SCRIPT_DIR
 BUILD_SEQUENCE = UE_DIR / "build_sequence.py"
 IMPORT_MAP = UE_DIR / "import_map.py"
 IMPORT_MODELS = UE_DIR / "import_models.py"
+RENDER_SEQUENCE = UE_DIR / "render_sequence.py"

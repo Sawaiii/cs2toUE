@@ -42,6 +42,7 @@ DEFAULTS = {
     "tracers": 1,                        # one beam per shot (can be a lot)
     "max_effects": 1500,                 # hard cap so a long clip cannot flood the level
     "active_camera": "",                 # which camera gets the camera cut (default: first)
+    "camera_offset": 0,                  # shift camera keys by N frames (sync tuning)
     "spawn_actors": 1,                   # 0 = only build tracks for actors already bound
     "mapping": "",                       # json file: actor kind/team -> asset path
     "level": "",                         # level to build into, e.g. /Game/cs2toUE/Maps/de_dust2
@@ -295,7 +296,8 @@ def _camera_component(cam):
     return None
 
 
-def add_camera(seq, label, rows, fps, scale, z_offset, duration, make_cut):
+def add_camera(seq, label, rows, fps, scale, z_offset, duration, make_cut,
+               frame_offset=0):
     """One camera actor with its motion; only the active one owns the camera cut.
 
     A sequence must carry a single camera cut track - one per camera made Sequencer
@@ -311,6 +313,8 @@ def add_camera(seq, label, rows, fps, scale, z_offset, duration, make_cut):
     cam.set_actor_label(label or "cs2toUE_Camera")
 
     binding = seq.add_possessable(cam)
+    if frame_offset:
+        rows = [dict(r, time=float(r["time"]) + frame_offset / fps) for r in rows]
     add_transform_track(seq, binding, rows, fps, scale, z_offset, duration)
 
     # focal length from the demo fov (horizontal)
@@ -595,7 +599,8 @@ def main(argv):
             label = actor.get("id") or actor.get("name") or "cs2toUE_Camera"
             unreal.log("cs2toUE: + camera {}".format(label))
             add_camera(seq, label, rows, fps, scale, z_offset, duration,
-                       make_cut=(i == active))
+                       make_cut=(i == active),
+                       frame_offset=int(opts["camera_offset"]))
         unreal.log("cs2toUE: {} cameras, the cut follows '{}'".format(
             len(cameras), cameras[active][0].get("id")))
 

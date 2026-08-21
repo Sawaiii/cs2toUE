@@ -7,4 +7,4 @@ Pipeline glue around existing tools:
   * Unreal Engine Python API - Level Sequence builder
 """
 
-__version__ = "1.0.7"
+__version__ = "1.0.8"

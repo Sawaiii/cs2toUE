@@ -20,7 +20,14 @@ DEFAULTS = {
     "package": "/Game/cs2toUE/Maps",
     "spawn": 1,
     "scale": 100.0,   # glTF is in metres; 100 uu per metre keeps 1 uu = 1 cm
+    "clean": 1,       # skip helper geometry (skybox, clips, triggers, nav)
 }
+
+# helper geometry nobody wants in a cinematic level - the by-hand workflow deletes
+# these after import, one by one
+CLEAN_TOKENS = ("skybox", "3dsky", "tools_", "toolsclip", "clip_", "_clip",
+                "trigger", "navmesh", "_nav", "occluder", "lightprobe",
+                "skip", "hint", "blocklight", "playerclip")
 
 
 def parse_args(argv):
@@ -40,20 +47,29 @@ def parse_args(argv):
     return opts
 
 
-def collect(path):
+def collect(path, clean=True):
     if os.path.isfile(path):
-        return [path]
-    out = []
+        return [path], []
+    out, skipped = [], []
     for root, _dirs, files in os.walk(path):
         for f in files:
-            if f.lower().endswith((".glb", ".gltf", ".fbx")):
-                out.append(os.path.join(root, f))
-    return sorted(out)
+            if not f.lower().endswith((".glb", ".gltf", ".fbx")):
+                continue
+            full = os.path.join(root, f)
+            low = f.lower()
+            if clean and any(tok in low for tok in CLEAN_TOKENS):
+                skipped.append(full)
+                continue
+            out.append(full)
+    return sorted(out), sorted(skipped)
 
 
 def main(argv):
     opts = parse_args(argv)
-    files = collect(opts["path"])
+    files, skipped = collect(opts["path"], clean=bool(int(opts["clean"])))
+    if skipped:
+        unreal.log("cs2toUE: {} helper meshes skipped (skybox/clip/trigger); "
+                   "--clean=0 keeps them".format(len(skipped)))
     if not files:
         unreal.log_error("cs2toUE: no glb/gltf/fbx found under {}".format(opts["path"]))
         return

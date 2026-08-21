@@ -172,6 +172,7 @@ cs2toue-cli.exe export  match.dem --clip-id 1      :: лучший момент 
 
 cs2toue-cli.exe ue set --engine "S:\ue5\UE_5.5" --project "S:\work\My.uproject"
 cs2toue-cli.exe ue build workspace\exports\match_clip1_ace
+cs2toue-cli.exe ue render workspace\exports\match_clip1_ace   :: кадры PNG без открытия редактора
 ```
 
 То же самое в окне — `cs2toUE.exe` (или ярлык `cs2toUE`).
@@ -558,6 +559,17 @@ cs2toue-cli.exe ue map de_dust2                           :: импортиро�
 cs2toue-cli.exe ue models --scene <сцена>                 :: импортировать модели
 cs2toue-cli.exe ue build <сцена> --dry-run                :: показать команду, не запуская
 ```
+
+```bat
+cs2toue-cli.exe ue render <сцена>                     :: рендер секвенции в PNG-кадры
+cs2toue-cli.exe ue render <сцена> --res 2560x1440 --quality final --format exr
+cs2toue-cli.exe ue render <сцена> --level /Game/MyMap.MyMap
+```
+
+`render` гонит собранную секвенцию через Movie Render Queue в offscreen-режиме: PNG/JPG/EXR
+кадры ложатся в `<сцена>ender`, кодировать в видео — дело монтажки. `--quality preview` —
+черновик в один сэмпл, `final` — 7 темпоральных сэмплов. Проверено вживую: 468 кадров
+720p из реальной демки за 7,5 минут на GTX 1650.
 
 Что делает `build`: создаёт Level Sequence, спавнит актора на каждого игрока и гранату,
 кладёт transform-треки (с разворачиванием углов, чтобы Sequencer не крутил актора через

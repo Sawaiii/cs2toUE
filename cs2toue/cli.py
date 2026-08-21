@@ -11,7 +11,7 @@ from . import (__version__, assets, demoinfo, gameversions, highlights, maplib,
                models, steam, ueproject)
 from .config import Config, PROJECT_DIR
 from .hlae import camio, index as hlae_index, manager as hlae_manager, resolver as hlae_resolver
-from .ue import BUILD_SEQUENCE, IMPORT_MAP, IMPORT_MODELS
+from .ue import BUILD_SEQUENCE, IMPORT_MAP, IMPORT_MODELS, RENDER_SEQUENCE
 from .util import (Fail, force_utf8, human, info, ok, parse_timecode, popen,
                    slug, warn)
 
@@ -527,6 +527,34 @@ def cmd_ue(args):
             models.write_ue_mapping(cfg, args.scene, args.package or "/Game/cs2toUE/Models")
         return
 
+    if sub == "render":
+        scene = Path(args.scene).resolve()
+        seq_name = args.sequence
+        if not seq_name:
+            # the same name build_sequence derives from the demo file
+            import json as _json
+            meta = _json.loads((scene / "scene.json").read_text(encoding="utf-8"))["meta"]
+            stem = Path(str(meta.get("demo", scene.name))).stem
+            seq_name = "SEQ_" + "".join(c if c.isalnum() else "_" for c in stem)
+        seq_path = seq_name if seq_name.startswith("/Game")             else f"/Game/cs2toUE/{seq_name}.{seq_name}"
+        level = args.level or f"/Game/cs2toUE/L_{seq_name}.L_{seq_name}"
+        # absolute on purpose: the editor's working directory is Engine/Binaries/Win64,
+        # a relative path would land the frames inside the engine folder
+        out = (Path(args.out) if args.out else (scene / "render")).resolve()
+        out.mkdir(parents=True, exist_ok=True)
+        extra = [f"--sequence={seq_path}", f"--level={level}", f"--out={out}",
+                 f"--resx={args.res.split('x')[0]}", f"--resy={args.res.split('x')[1]}",
+                 f"--quality={args.quality}", f"--file-format={args.format}"]
+        ueproject.run_script(cfg, RENDER_SEQUENCE, extra, dry_run=args.dry_run)
+        if not args.dry_run:
+            frames = sorted(out.glob("*.png")) + sorted(out.glob("*.jpg")) +                 sorted(out.glob("*.exr"))
+            if frames:
+                ok(f"кадры: {len(frames)} шт в {out}")
+            else:
+                warn(f"кадров не появилось - смотрите лог Unreal выше "
+                     f"(уровень {level} существует?)")
+        return
+
     if sub == "map":
         target = args.map
         p = Path(target)
@@ -960,6 +988,15 @@ def build_parser() -> argparse.ArgumentParser:
     x.add_argument("--path", default="", help="models folder (default: the models folder in the workspace)")
     x.add_argument("--scene", default="", help="also write ue_mapping.json for this scene")
     x.add_argument("--package", default="", help="content path, default /Game/cs2toUE/Models")
+    x.add_argument("--dry-run", action="store_true")
+    x = us.add_parser("render", help="render the built sequence to an image sequence")
+    x.add_argument("scene", help="scene folder (the one you ran `ue build` on)")
+    x.add_argument("--sequence", default="", help="sequence asset name or /Game path")
+    x.add_argument("--level", default="", help="level with the actors (default: L_<sequence>)")
+    x.add_argument("--out", default="", help="output folder (default: <scene>/render)")
+    x.add_argument("--res", default="1920x1080")
+    x.add_argument("--quality", choices=["final", "preview"], default="final")
+    x.add_argument("--format", choices=["png", "jpg", "exr"], default="png")
     x.add_argument("--dry-run", action="store_true")
     x = us.add_parser("map", help="import a converted map into the project")
     x.add_argument("map", help="map name from the library, or a folder with glb files")

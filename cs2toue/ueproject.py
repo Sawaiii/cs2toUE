@@ -247,7 +247,10 @@ def run_script(cfg, script, script_args, dry_run: bool = False) -> list:
     # workspace cache and later runs start in seconds.
     cmd = [editor, project, f"-ExecCmds=py {arg}",
            "-stdout", "-FullStdOutLogOutput", "-RenderOffscreen", "-NoSplash",
-           "-Unattended", "-NoZenAutoLaunch"]
+           "-Unattended", "-NoZenAutoLaunch",
+           # engine warnings ("video memory exhausted") must not end up burnt into
+           # rendered frames
+           "-NoScreenMessages"]
     installed = Path(cfg.ue_engine or "") / "Engine" / "Build" / "InstalledBuild.txt"
     cmd.append("-ddc=InstalledNoZenLocalFallback" if installed.is_file()
                else "-ddc=NoZenLocalFallback")

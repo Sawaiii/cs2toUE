@@ -16,7 +16,7 @@ import winreg
 from pathlib import Path
 
 APP = "cs2toUE"
-VERSION = "1.0.7"
+VERSION = "1.0.8"
 REG_UNINSTALL = r"Software\Microsoft\Windows\CurrentVersion\Uninstall\cs2toUE"
 
 
