@@ -12,6 +12,7 @@ moves or renames agents does not break anything.
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import time
@@ -183,7 +184,8 @@ def cached(cfg, name: str) -> ModelBuild | None:
 
 # ------------------------------------------------------------------ export
 
-def export(cfg, model, force: bool = False, cs2_dir: str = "") -> ModelBuild:
+def export(cfg, model, force: bool = False, cs2_dir: str = "",
+           anims: str = "core", scene_dir: str = "") -> ModelBuild:
     """model: a dict from find_models(), or a model name."""
     if isinstance(model, str):
         hits = [m for m in find_models(cfg, "player", model, cs2_dir)
@@ -213,7 +215,24 @@ def export(cfg, model, force: bool = False, cs2_dir: str = "") -> ModelBuild:
     started = time.time()
     cmd = [exe, "-i", model["vpk"], "-f", model["path"], "-o", str(out_dir), "-d",
            "--gltf_export_format", "glb", "--gltf_export_materials",
-           "--gltf_export_animations", "--gltf_textures_adapt"]
+           "--gltf_textures_adapt"]
+    # A full agent is ~1 GB and 2062 clips; the builder uses a couple of hundred.
+    # Filtering at export is the only place it is cheap - Unreal would otherwise
+    # import every one of them.
+    wanted = []
+    mode = (anims or "core").strip().lower()
+    if mode == "none":
+        pass
+    elif mode == "all":
+        cmd.append("--gltf_export_animations")
+    else:
+        wanted = clips_for_scene(scene_dir) if scene_dir else (
+            wanted_clips() if mode == "core"
+            else [w.strip() for w in str(anims).split(",") if w.strip()])
+        cmd += ["--gltf_export_animations", "--gltf_animation_list", ",".join(wanted)]
+    if wanted:
+        info(f"{name}: {len(wanted)} clip name(s) requested "
+             f"({'scene' if scene_dir else mode})")
     cmd += assets.game_info_args(cfg)
     from .util import run
     run(cmd, check=False)
@@ -333,6 +352,73 @@ def _gun_token(weapon: str) -> str:
     return GUN_ALIASES.get(low, low)
 
 
+# every gun token CS2 uses in clip names, taken from a full ctm_sas export
+GUN_TOKENS = (
+    "ak", "aug", "awp", "bizon", "cz75", "cz75a", "deagle", "elite", "famas",
+    "fiveseven", "g3sg1", "galilar", "glock", "hkp", "m249", "m4a1s", "m4a4",
+    "mac10", "mag7", "mp5sd", "mp7", "mp9", "negev", "nova", "p250", "p90",
+    "revolver", "sawedoff", "scar20", "sg556", "ssg08", "taser", "tec9",
+    "ump45", "usp", "xm1014", "molotov", "c4", "healthshot",
+    "bayonet", "bowie", "butterfly", "canis", "cord", "css", "falchion", "flip",
+    "gut", "karambit", "kukri", "m9", "navaja", "outdoor", "push", "skeleton",
+    "stiletto", "tactical", "talon", "ursus",
+)
+FAMILIES = ("rifle", "pistol", "knife", "grenade", "equipment")
+
+
+def wanted_clips(families=None, guns=None) -> list:
+    """Clip names the sequence builder can actually use.
+
+    A full agent carries ~2062 clips and a gigabyte of animation data; the builder
+    touches a couple of hundred of them. Names that a given model does not have are
+    harmless - the exporter simply finds nothing to match.
+    """
+    families = tuple(families or FAMILIES)
+    guns = tuple(guns or GUN_TOKENS)
+    out = []
+    for fam in families:
+        for template in ("run_{d}_{f}", "walk_{d}_{f}", "crouch_{d}_{f}",
+                         "jump_{d}_{f}", "inair_{d}_{f}"):
+            out += [template.format(d=d, f=fam) for d in DIRECTIONS]
+        out += [f"idle_{fam}", f"idle_crouch_{fam}",
+                f"jump_stand_{fam}", f"inair_stand_{fam}",
+                f"jump_crouch_stand_{fam}", f"inair_crouch_stand_{fam}"]
+    for gun in guns:
+        out += [f"shoot_{gun}", f"idle_{gun}", f"draw_{gun}", f"idle_crouch_{gun}"]
+    out += ["throw_overhand_grenade", "throw_underhand_grenade", "flashed", "breathing"]
+    return sorted(set(out))
+
+
+def clips_for_scene(scene_dir) -> list:
+    """Only what this scene needs: the weapons its players actually hold."""
+    import csv as _csv
+    scene_dir = Path(scene_dir)
+    try:
+        scene = json.loads((scene_dir / "scene.json").read_text(encoding="utf-8"))
+    except Exception:
+        return wanted_clips()
+    weapons = set()
+    for actor in scene.get("actors", []):
+        if actor.get("kind") != "player" or not actor.get("track"):
+            continue
+        track = scene_dir / str(actor["track"]).replace("/", os.sep)
+        if not track.is_file():
+            continue
+        with open(track, "r", encoding="utf-8", newline="") as fh:
+            for row in _csv.DictReader(fh):
+                w = (row.get("weapon") or "").strip()
+                if w:
+                    weapons.add(w)
+    if not weapons:
+        return wanted_clips()
+    families = {_family_for(w) for w in weapons}
+    guns = {resolve_gun(w, GUN_TOKENS) for w in weapons}
+    guns.discard("")
+    info(f"scene uses {len(weapons)} weapon(s): "
+         f"families {sorted(families)}, guns {sorted(guns)}")
+    return wanted_clips(families, guns)
+
+
 def resolve_gun(weapon: str, guns) -> str:
     """Best gun token for a demo weapon name among the ones a model actually ships.
 
@@ -401,7 +487,48 @@ def match_animations(names: list) -> dict:
     return {"families": families, "guns": guns}
 
 
-def _asset_paths(node, base: str):
+def _manifest(build) -> dict:
+    """{clip leaf name: real /Game path} from what Unreal actually imported."""
+    try:
+        raw = json.loads((Path(build.out) / "imported_assets.json").read_text(
+            encoding="utf-8"))
+    except Exception:
+        return {}
+    out = {}
+    for path in raw.get("assets", []):
+        # "/Game/pkg/animation_anims_world_rifle__default_rifle_run_ne_rifle.xxx"
+        leaf = str(path).split("/")[-1].split(".")[0]
+        out[leaf] = path if "." in str(path).split("/")[-1] else f"{path}.{leaf}"
+    return out
+
+
+def _resolve_asset(clip: str, manifest: dict, base: str) -> str:
+    """Real imported path for a clip, falling back to the guessed name."""
+    if manifest:
+        flat = clip.replace("/", "_")
+        hit = manifest.get(flat)
+        if hit:
+            return hit
+        tail = clip.rsplit("/", 1)[-1]
+        for name, path in manifest.items():
+            if name.endswith(tail):
+                return path
+    leaf = clip.rsplit("/", 1)[-1]
+    return f"{base}/{leaf}.{leaf}"
+
+
+def _pick_mesh(manifest: dict, base: str, name: str) -> str:
+    """The skeletal mesh Unreal made - its name is derived from the vmdl, not the model."""
+    for asset, path in manifest.items():
+        low = asset.lower()
+        if "physicsasset" in low or "skeleton" in low.replace("skeletal", ""):
+            continue
+        if "body" in low or low.endswith(name.lower()):
+            return path
+    return f"{base}/{name}.{name}"
+
+
+def _asset_paths(node, base: str, manifest=None):
     """Turn every clip name in the nested match_animations result into an asset path.
 
     The structure is {"families": {...}, "guns": {...}} several levels deep, so this
@@ -409,11 +536,9 @@ def _asset_paths(node, base: str):
     iterate the *characters* of the path string.
     """
     if isinstance(node, dict):
-        return {k: _asset_paths(v, base) for k, v in node.items()}
+        return {k: _asset_paths(v, base, manifest) for k, v in node.items()}
     if isinstance(node, str):
-        # Unreal names the AnimSequence after the clip's file name
-        leaf = node.rsplit("/", 1)[-1]
-        return f"{base}/{leaf}.{leaf}"
+        return _resolve_asset(node, manifest or {}, base)
     return node
 
 
@@ -436,9 +561,12 @@ def write_ue_mapping(cfg, scene_dir, package: str = "/Game/cs2toUE/Models") -> P
         if not pick:
             continue
         base = f"{package}/{pick.name}"
+        man = _manifest(pick)
+        if man:
+            info(f"{pick.name}: {len(man)} imported asset(s) known, using real paths")
         mapping[f"player.{team}"] = {
-            "skeletal_mesh": f"{base}/{pick.name}.{pick.name}",
-            "animations": _asset_paths(match_animations(pick.animations), base),
+            "skeletal_mesh": _pick_mesh(man, base, pick.name),
+            "animations": _asset_paths(match_animations(pick.animations), base, man),
             "model": pick.name,
         }
     # weapons: one entry per exported weapon model, so the sequence builder can put

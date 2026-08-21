@@ -7,6 +7,7 @@ Each model folder becomes its own content folder, so the asset paths match what
 `cs2toue models mapping` writes into ue_mapping.json.
 """
 
+import json
 import os
 import sys
 
@@ -72,8 +73,21 @@ def main(argv):
             continue
         unreal.log("cs2toUE: importing {} ({} files) -> {}".format(name, len(tasks), package))
         tools.import_asset_tasks(tasks)
+        paths = []
         for task in tasks:
-            total += len(task.get_editor_property("imported_object_paths") or [])
+            paths += list(task.get_editor_property("imported_object_paths") or [])
+        total += len(paths)
+        # Unreal renames on import: "animation/anims/world/rifle/.../run_ne_rifle"
+        # becomes "animation_anims_world_rifle__default_rifle_run_ne_rifle". Guessing
+        # that rule is fragile, so the real paths are written down for the mapping
+        # generator to read.
+        try:
+            manifest = os.path.join(folder, "imported_assets.json")
+            with open(manifest, "w", encoding="utf-8") as fh:
+                json.dump({"package": package, "assets": sorted(paths)}, fh, indent=1)
+            unreal.log("cs2toUE: {} -> {} asset paths written".format(name, len(paths)))
+        except Exception as exc:
+            unreal.log_warning("cs2toUE: could not write manifest ({})".format(exc))
 
     unreal.log("cs2toUE: imported {} asset(s) from {} model folder(s)".format(
         total, len(folders)))

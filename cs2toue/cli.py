@@ -589,7 +589,8 @@ def cmd_models(args):
 
     if sub == "export":
         for name in args.names:
-            models.export(cfg, name, force=args.force, cs2_dir=cs2_dir)
+            models.export(cfg, name, force=args.force, cs2_dir=cs2_dir,
+                          anims=args.anims, scene_dir=args.for_scene)
         return
 
     if sub == "library":
@@ -980,6 +981,11 @@ def build_parser() -> argparse.ArgumentParser:
     x.add_argument("names", nargs="+")
     x.add_argument("--force", action="store_true")
     x.add_argument("--cs2-dir", default="")
+    x.add_argument("--anims", default="core",
+                   help="core (default, ~470 клипов) | all (все ~2000, ~1 ГБ) | none | "
+                        "список имён через запятую")
+    x.add_argument("--for-scene", default="",
+                   help="выгрузить только клипы, нужные этой сцене")
     x = mos.add_parser("library", help="what is already exported")
     x = mos.add_parser("mapping", help="write ue_mapping.json for a scene from the library")
     x.add_argument("scene")
