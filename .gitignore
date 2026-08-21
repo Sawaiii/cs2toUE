@@ -21,3 +21,6 @@ __pycache__/
 .idea/
 *.swp
 exceptions.txt
+
+cs2toue-assets.zip
+*.zip

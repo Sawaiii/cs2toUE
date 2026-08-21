@@ -666,6 +666,10 @@ def cmd_assets(args):
                     if f.is_file():
                         zf.write(f, f"{kind}/{f.relative_to(root)}")
                         count += 1
+        kinds = {k for k, _ in sources}
+        if "models" not in kinds:
+            warn("в архиве НЕТ моделей - models export ничего не выгрузил. "
+                 "Проверьте: cs2toue-cli models list --filter ctm")
         ok(f"упаковано {count} файлов ({human(out.stat().st_size)}): {out}")
         print("  перенесите этот файл на компьютер с Unreal и там выполните:")
         print(f"  cs2toue-cli assets unpack {out.name}")

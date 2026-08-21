@@ -74,15 +74,35 @@ def _listing_cache(cfg, pak: Path) -> Path:
     return cfg.cache_dir / f"vpklist_{pak.parent.name}_{st.st_size}.txt"
 
 
+def _clean_listing(lines) -> list:
+    """Source 2 Viewer prints "path CRC:0011.. size:1234" - keep just the path.
+
+    The trailing metadata is why every "ends with .vmdl_c" pattern used to miss:
+    the line does not end with the extension at all.
+    """
+    out = []
+    for ln in lines:
+        ln = ln.strip()
+        if not ln:
+            continue
+        cut = ln.find(" CRC:")
+        if cut == -1:
+            cut = ln.find(" size:")
+        out.append((ln[:cut] if cut != -1 else ln).strip())
+    return out
+
+
 def list_vpk(cfg, pak: Path, use_cache: bool = True) -> list:
     """All file paths inside a vpk (cached - the listing takes a while)."""
     cache = _listing_cache(cfg, pak)
     if use_cache and cache.is_file():
-        return cache.read_text(encoding="utf-8", errors="replace").splitlines()
+        # older caches hold the raw lines, so clean on read as well as on write
+        return _clean_listing(cache.read_text(encoding="utf-8",
+                                              errors="replace").splitlines())
     exe = assets.ensure_cli(cfg)
     info(f"listing {pak.name} (first time only, this takes a moment)")
     text = run_capture([exe, "-i", str(pak), "--vpk_list"])
-    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    lines = _clean_listing(text.splitlines())
     cache.parent.mkdir(parents=True, exist_ok=True)
     cache.write_text("\n".join(lines), encoding="utf-8")
     return lines
