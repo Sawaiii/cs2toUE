@@ -118,7 +118,23 @@ def load_library(cfg) -> dict:
         raw = json.loads(p.read_text(encoding="utf-8"))
     except Exception:
         return {}
-    return {k: MapBuild(**v) for k, v in raw.get("maps", {}).items()}
+    lib = {k: MapBuild(**v) for k, v in raw.get("maps", {}).items()}
+    # the library may have been converted on another machine (CS2 on a gaming PC,
+    # Unreal here) - absolute paths from over there are re-rooted into this workspace
+    moved = False
+    for name, b in lib.items():
+        local = cfg.ws / "maps" / name
+        if not Path(b.out).is_dir() and local.is_dir():
+            b.out = str(local)
+            if b.main:
+                b.main = str(local / Path(b.main).name)                     if (local / Path(b.main).name).is_file() else ""
+            if not b.main:
+                glbs = sorted(local.rglob("*.glb"), key=lambda x: x.stat().st_size)
+                b.main = str(glbs[-1]) if glbs else ""
+            moved = True
+    if moved:
+        save_library(cfg, lib)
+    return lib
 
 
 def save_library(cfg, lib: dict) -> Path:
@@ -208,6 +224,12 @@ def ensure(cfg, map_name: str) -> MapBuild | None:
         return None
     map_file = find(cfg, map_name)
     if not map_file:
+        # no CS2 on this machine - a build brought over from another one still counts
+        name = Path(str(map_name)).stem
+        build = load_library(cfg).get(name)
+        if build and Path(build.out).is_dir():
+            ok(f"{name}: карта из перенесённой библиотеки, {build.out}")
+            return build
         warn(f"map {map_name} is not in the CS2 install - skipping map conversion")
         return None
     return convert(cfg, map_file)

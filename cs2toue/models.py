@@ -131,7 +131,18 @@ def load_library(cfg) -> dict:
         raw = json.loads(p.read_text(encoding="utf-8"))
     except Exception:
         return {}
-    return {k: ModelBuild(**v) for k, v in raw.get("models", {}).items()}
+    lib = {k: ModelBuild(**v) for k, v in raw.get("models", {}).items()}
+    moved = False
+    for name, b in lib.items():
+        local = cfg.ws / "models" / name
+        if not Path(b.out).is_dir() and local.is_dir():
+            b.out = str(local)
+            main_name = Path(b.main).name if b.main else ""
+            b.main = str(local / main_name) if main_name and (local / main_name).is_file() else b.main
+            moved = True
+    if moved:
+        save_library(cfg, lib)
+    return lib
 
 
 def save_library(cfg, lib: dict) -> Path:

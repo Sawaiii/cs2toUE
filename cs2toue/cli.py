@@ -643,6 +643,61 @@ def cmd_preview(args):
     show(args.scene)
 
 
+def cmd_assets(args):
+    """Move converted maps and models between machines (CS2 PC -> Unreal PC)."""
+    import zipfile
+    cfg = _cfg(args)
+    sub = args.assets_cmd
+
+    if sub == "pack":
+        out = Path(args.out or (cfg.ws / "cs2toue-assets.zip")).resolve()
+        sources = []
+        for kind in ("maps", "models"):
+            root = cfg.ws / kind
+            if (root / "library.json").is_file():
+                sources.append((kind, root))
+        if not sources:
+            raise Fail("нечего упаковывать: нет ни workspace\maps, ни workspace\models "
+                       "(сначала maps convert / models export)")
+        count = 0
+        with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as zf:
+            for kind, root in sources:
+                for f in root.rglob("*"):
+                    if f.is_file():
+                        zf.write(f, f"{kind}/{f.relative_to(root)}")
+                        count += 1
+        ok(f"упаковано {count} файлов ({human(out.stat().st_size)}): {out}")
+        print("  перенесите этот файл на компьютер с Unreal и там выполните:")
+        print(f"  cs2toue-cli assets unpack {out.name}")
+        return
+
+    if sub == "unpack":
+        src = Path(args.archive)
+        if not src.is_file():
+            raise Fail(f"архив не найден: {src}")
+        cfg.ensure_dirs()
+        count = 0
+        with zipfile.ZipFile(src) as zf:
+            for name in zf.namelist():
+                if not name.startswith(("maps/", "models/")) or name.endswith("/"):
+                    continue
+                target = cfg.ws / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with zf.open(name) as fh, open(target, "wb") as outfh:
+                    outfh.write(fh.read())
+                count += 1
+        # re-rooting happens on the next library load; trigger it now for the report
+        maps = maplib.load_library(cfg)
+        mods = models.load_library(cfg)
+        ok(f"распаковано {count} файлов в {cfg.ws}")
+        print(f"  карты в библиотеке:  {', '.join(sorted(maps)) or '-'}")
+        print(f"  модели в библиотеке: {', '.join(sorted(mods)) or '-'}")
+        print("  дальше: cs2toue-cli ue map <карта>  и  cs2toue-cli ue models --scene <сцена>")
+        return
+
+    raise Fail(f"unknown assets subcommand {sub}")
+
+
 def cmd_update(args):
     from . import updater
     cfg = _cfg(args)
@@ -947,6 +1002,14 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("preview", help="top-down preview of a scene with a timeline")
     s.add_argument("scene")
     s.set_defaults(func=cmd_preview)
+
+    s = sub.add_parser("assets", help="перенос конвертированных карт и моделей между компьютерами")
+    asub = s.add_subparsers(dest="assets_cmd", required=True)
+    x = asub.add_parser("pack", help="упаковать workspace\maps и workspace\models в один zip")
+    x.add_argument("--out", default="", help="куда положить архив")
+    x = asub.add_parser("unpack", help="распаковать архив с другого компьютера в локальный workspace")
+    x.add_argument("archive")
+    s.set_defaults(func=cmd_assets)
 
     s = sub.add_parser("update", help="check GitHub for a new version and update in place")
     s.add_argument("--check", action="store_true", help="only report, do not update")
