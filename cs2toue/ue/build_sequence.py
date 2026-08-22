@@ -427,6 +427,32 @@ def add_fire_overlay(binding, fire_times, anims, fps, duration, rows=None):
     return made
 
 
+GUN_ALIASES = {"deserteagle": "deagle", "dualberettas": "elite", "ak47": "ak",
+               "m4a1silencer": "m4a1s", "m4a1s": "m4a1s", "usps": "usp",
+               "shadowdaggers": "knife", "r8revolver": "revolver"}
+
+
+def weapon_asset(weapon, mapping):
+    """Model for a weapon, trying every spelling the mapping may have used."""
+    low = _norm(weapon)
+    tries = [low, GUN_ALIASES.get(low, ""), "weapon_" + str(weapon).lower().replace(" ", "_")]
+    if "knife" in low or "dagger" in low:
+        tries.append("knife")
+    for key in tries:
+        if key:
+            hit = mapping.get("weapon." + key)
+            if hit:
+                return hit
+    # last resort: any mapped weapon whose key is a prefix of this name
+    for key, value in mapping.items():
+        if not key.startswith("weapon."):
+            continue
+        token = key[len("weapon."):]
+        if len(token) >= 3 and (low.startswith(token) or token.startswith(low)):
+            return value
+    return ""
+
+
 def weapon_spans(rows, min_seconds=0.2):
     """[(weapon_key, start, end)] - which gun is in the hands when."""
     spans = []
@@ -453,7 +479,7 @@ def attach_weapons(seq, player_binding, actor, rows, mapping, fps, duration, mis
     socket = str(mapping.get("weapon_bone", "hand_R"))
     made = 0
     for weapon, start, end in weapon_spans(rows):
-        asset_path = mapping.get("weapon." + weapon)
+        asset_path = weapon_asset(weapon, mapping)
         if not asset_path:
             missing.add(weapon)
             continue
@@ -599,6 +625,8 @@ def add_camera(seq, label, rows, fps, scale, z_offset, duration, make_cut,
 # radius in source units, used to size the fallback shapes
 EFFECT_RADIUS = {"smoke": 144.0, "molotov": 150.0, "he": 70.0, "flash": 50.0,
                  "decoy": 60.0, "bomb": 250.0}
+TRACER_LENGTH = 700.0     # unreal units of visible streak (about 7 m)
+TRACER_WIDTH = 0.006      # cylinder scale: the engine shape is 100 cm across
 FALLBACK_SHAPE = {
     "smoke": "/Engine/BasicShapes/Sphere.Sphere",
     "molotov": "/Engine/BasicShapes/Cylinder.Cylinder",
@@ -634,8 +662,15 @@ def spawn_effect_actor(effect, mapping, scale, z_offset):
             rot = unreal.MathLibrary.make_rot_from_z(delta)
         except Exception:
             rot = unreal.Rotator(0, 0, 0)
-        # the engine cylinder is 100 cm tall and 100 cm wide
-        mesh_scale = unreal.Vector(0.02, 0.02, length / 100.0)
+        # A tracer should read as a short bright streak leaving the muzzle, not as a
+        # pole spanning the whole map: full length looked like a web of wires in the
+        # render. Keep the direction and the start, cut the visible part.
+        streak = min(length, TRACER_LENGTH)
+        k = streak / length
+        mid = (streak / 2.0) / length
+        loc = unreal.Vector(loc.x + delta.x * mid, loc.y + delta.y * mid,
+                            loc.z + delta.z * mid)
+        mesh_scale = unreal.Vector(TRACER_WIDTH, TRACER_WIDTH, streak / 100.0)
     elif asset_path in FALLBACK_SHAPE.values():
         radius_uu = EFFECT_RADIUS.get(kind, 80.0) * scale
         s = radius_uu / 50.0

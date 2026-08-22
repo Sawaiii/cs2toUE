@@ -487,18 +487,33 @@ def match_animations(names: list) -> dict:
     return {"families": families, "guns": guns}
 
 
-def _manifest(build) -> dict:
-    """{clip leaf name: real /Game path} from what Unreal actually imported."""
+def _manifest(cfg, build, package: str) -> dict:
+    """{asset name: real /Game path} for a model that is already in the project.
+
+    Two sources, in order: the file the importer writes, and - when an import was
+    interrupted before it could write one - the project's Content folder itself.
+    Scanning is the more reliable of the two: the .uasset files are the ground truth
+    for what Unreal named things.
+    """
+    out = {}
     try:
         raw = json.loads((Path(build.out) / "imported_assets.json").read_text(
             encoding="utf-8"))
+        for path in raw.get("assets", []):
+            leaf = str(path).split("/")[-1].split(".")[0]
+            out[leaf] = path if "." in str(path).split("/")[-1] else f"{path}.{leaf}"
     except Exception:
-        return {}
-    out = {}
-    for path in raw.get("assets", []):
-        # "/Game/pkg/animation_anims_world_rifle__default_rifle_run_ne_rifle.xxx"
-        leaf = str(path).split("/")[-1].split(".")[0]
-        out[leaf] = path if "." in str(path).split("/")[-1] else f"{path}.{leaf}"
+        pass
+    if out:
+        return out
+    project = Path(getattr(cfg, "ue_project", "") or "")
+    if not project.is_file():
+        return out
+    folder = project.parent / "Content" / package.replace("/Game/", "").strip("/") / build.name
+    if not folder.is_dir():
+        return out
+    for f in sorted(folder.glob("*.uasset")):
+        out[f.stem] = f"{package.rstrip('/')}/{build.name}/{f.stem}.{f.stem}"
     return out
 
 
@@ -542,6 +557,44 @@ def _asset_paths(node, base: str, manifest=None):
     return node
 
 
+# family prefixes CS2 puts in weapon model names
+WEAPON_PREFIXES = ("weapon_", "v_", "w_", "rif_", "smg_", "pist_", "snip_", "shot_",
+                   "mach_", "eq_")
+
+
+def weapon_keys(model_name: str) -> list:
+    """Lookup keys for a weapon model: its own name and the token a demo name gives.
+
+    "weapon_rif_ak47" -> ["ak47", "ak", "weapon_rif_ak47"], so whichever spelling the
+    demo uses finds the model.
+    """
+    low = model_name.lower()
+    for prefix in WEAPON_PREFIXES:
+        while low.startswith(prefix):
+            low = low[len(prefix):]
+    flat = re.sub(r"[^a-z0-9]", "", low)
+    keys = [flat, model_name.lower()]
+    alias = GUN_ALIASES.get(flat)
+    if alias:
+        keys.append(alias)
+    for token in GUN_TOKENS:
+        if flat.startswith(token) and len(token) >= 3:
+            keys.append(token)
+    if "knife" in flat or "dagger" in flat:
+        keys.append("knife")
+    return [k for i, k in enumerate(keys) if k and k not in keys[:i]]
+
+
+def _pick_weapon_mesh(manifest: dict, base: str, name: str) -> str:
+    for asset, path in manifest.items():
+        low = asset.lower()
+        if "physicsasset" in low or "skeleton" in low:
+            continue
+        if low.endswith(name.lower()) or name.lower() in low:
+            return path
+    return f"{base}/{name}.{name}"
+
+
 def write_ue_mapping(cfg, scene_dir, package: str = "/Game/cs2toUE/Models") -> Path:
     """Generate ue_mapping.json for a scene from the exported model library.
 
@@ -561,7 +614,7 @@ def write_ue_mapping(cfg, scene_dir, package: str = "/Game/cs2toUE/Models") -> P
         if not pick:
             continue
         base = f"{package}/{pick.name}"
-        man = _manifest(pick)
+        man = _manifest(cfg, pick, package)
         if man:
             info(f"{pick.name}: {len(man)} imported asset(s) known, using real paths")
         mapping[f"player.{team}"] = {
@@ -574,12 +627,13 @@ def write_ue_mapping(cfg, scene_dir, package: str = "/Game/cs2toUE/Models") -> P
     for b in lib.values():
         if b.kind != "weapon":
             continue
-        short = b.name.lower()
-        for prefix in ("weapon_", "v_", "w_"):
-            if short.startswith(prefix):
-                short = short[len(prefix):]
         base = f"{package}/{b.name}"
-        mapping[f"weapon.{short}"] = f"{base}/{b.name}.{b.name}"
+        man = _manifest(cfg, b, package)
+        asset = _pick_weapon_mesh(man, base, b.name)
+        # keyed by the token the demo will resolve to, not by the file name:
+        # "weapon_rif_ak47" and the demo's "AK-47" both land on "ak47"
+        for key in weapon_keys(b.name):
+            mapping.setdefault(f"weapon.{key}", asset)
     mapping.setdefault("weapon_bone", "hand_R")
     mapping.setdefault("grenade", "/Engine/BasicShapes/Sphere.Sphere")
     mapping.setdefault("default", "/Engine/BasicShapes/Cylinder.Cylinder")

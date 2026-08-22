@@ -54,6 +54,15 @@ def main(argv):
         unreal.log_error("cs2toUE: render needs --sequence, --level and --out")
         return finish()
 
+    # engine warnings must not be burnt into the frames, and the default streaming
+    # pool is what triggers them on a 4 GB card
+    for cmd in ("DisableAllScreenMessages", "r.Streaming.PoolSize 2000",
+                "r.Streaming.HLODStrategy 2"):
+        try:
+            unreal.SystemLibrary.execute_console_command(None, cmd)
+        except Exception:
+            pass
+
     subsystem = unreal.get_editor_subsystem(unreal.MoviePipelineQueueSubsystem)
     if subsystem is None:
         unreal.log_error("cs2toUE: Movie Render Queue plugin is not enabled in this project")
