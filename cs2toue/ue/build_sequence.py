@@ -432,6 +432,52 @@ GUN_ALIASES = {"deserteagle": "deagle", "dualberettas": "elite", "ak47": "ak",
                "shadowdaggers": "knife", "r8revolver": "revolver"}
 
 
+_MESH_CACHE = {}
+
+
+def load_mesh_asset(path):
+    """A spawnable mesh for a mapped path.
+
+    The mapping can only guess what Unreal named a mesh on import - glTF mesh names,
+    asset names and our model names all differ. So: try the path, and if it is not a
+    mesh (or does not exist), ask Unreal what meshes live in that package and take the
+    biggest one, which for a weapon folder is the gun itself rather than a sticker.
+    """
+    if path in _MESH_CACHE:
+        return _MESH_CACHE[path]
+    asset = None
+    try:
+        asset = unreal.EditorAssetLibrary.load_asset(path)
+    except Exception:
+        asset = None
+    if not isinstance(asset, (unreal.StaticMesh, unreal.SkeletalMesh)):
+        asset = None
+        package = path.rsplit("/", 1)[0]
+        try:
+            names = unreal.EditorAssetLibrary.list_assets(package, recursive=False)
+        except Exception:
+            names = []
+        best_size = -1
+        for name in names:
+            try:
+                candidate = unreal.EditorAssetLibrary.load_asset(name)
+            except Exception:
+                continue
+            if not isinstance(candidate, (unreal.StaticMesh, unreal.SkeletalMesh)):
+                continue
+            low = str(name).lower()
+            if "physics" in low or "collision" in low:
+                continue
+            try:
+                size = candidate.get_bounds().box_extent.length()
+            except Exception:
+                size = 0.0
+            if size > best_size:
+                asset, best_size = candidate, size
+    _MESH_CACHE[path] = asset
+    return asset
+
+
 def weapon_asset(weapon, mapping):
     """Model for a weapon, trying every spelling the mapping may have used."""
     low = _norm(weapon)
@@ -483,15 +529,21 @@ def attach_weapons(seq, player_binding, actor, rows, mapping, fps, duration, mis
         if not asset_path:
             missing.add(weapon)
             continue
-        asset = unreal.EditorAssetLibrary.load_asset(asset_path)
+        asset = load_mesh_asset(asset_path)
         if asset is None:
             missing.add(weapon)
             continue
         try:
             sub = editor_actor_subsystem()
+            # the correction is applied at spawn and kept by the attach rule below:
+            # snapping the rotation instead would align the gun with the forearm bone
+            # and stand it upright through the character
+            off = mapping.get("weapon_offset") or [-90.0, 0.0, 0.0]
+            spawn_rot = unreal.Rotator(float(off[0]), float(off[1]), float(off[2]))
             weapon_actor = (sub.spawn_actor_from_object(asset, unreal.Vector(0, 0, 0),
-                                                  unreal.Rotator(0, 0, 0)) if sub else None)
+                                                        spawn_rot) if sub else None)
             if weapon_actor is None:
+                unreal.log_warning("cs2toUE: {} did not spawn".format(weapon))
                 continue
             weapon_actor.set_actor_label("wpn_{}_{}".format(weapon, actor.get("name", "")))
             weapon_actor.set_folder_path("cs2toUE/Weapons")
@@ -499,11 +551,25 @@ def attach_weapons(seq, player_binding, actor, rows, mapping, fps, duration, mis
             attach = wb.add_track(unreal.MovieScene3DAttachTrack)
             section = attach.add_section()
             section.set_range_seconds(start, max(end, start + 1.0 / fps))
-            section.set_constraint_binding_id(
-                unreal.MovieSceneSequenceExtensions.get_binding_id(seq, player_binding))
-            for prop in ("attach_socket_name",):
+            binding_id = unreal.MovieSceneSequenceExtensions.get_binding_id(
+                seq, player_binding)
+            try:
+                section.set_constraint_binding_id(binding_id)
+            except Exception:
+                section.set_editor_property("constraint_binding_id", binding_id)
+            try:
+                section.set_editor_property("attach_socket_name", unreal.Name(socket))
+            except Exception:
+                section.set_editor_property("attach_socket_name", socket)
+            # snap to the bone: the default keeps the spawn offset, which leaves the
+            # gun hanging where it was created instead of in the hand
+            snap = unreal.AttachmentRule.SNAP_TO_TARGET
+            keep = unreal.AttachmentRule.KEEP_RELATIVE
+            for rule, value in (("attachment_location_rule", snap),
+                                ("attachment_rotation_rule", keep),
+                                ("attachment_scale_rule", snap)):
                 try:
-                    section.set_editor_property(prop, socket)
+                    section.set_editor_property(rule, value)
                 except Exception:
                     pass
             vis = wb.add_track(unreal.MovieSceneVisibilityTrack)

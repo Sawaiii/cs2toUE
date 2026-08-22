@@ -252,7 +252,10 @@ def run_script(cfg, script, script_args, dry_run: bool = False) -> list:
            "-Unattended", "-NoZenAutoLaunch",
            # engine warnings ("video memory exhausted") must not end up burnt into
            # rendered frames
-           "-NoScreenMessages"]
+           "-NoScreenMessages",
+           # applied before any world loads, unlike a console command from a script;
+           # no streaming budget means no "video memory exhausted" banner in frames
+           "-dpcvars=r.TextureStreaming=0"]
     installed = Path(cfg.ue_engine or "") / "Engine" / "Build" / "InstalledBuild.txt"
     cmd.append("-ddc=InstalledNoZenLocalFallback" if installed.is_file()
                else "-ddc=NoZenLocalFallback")

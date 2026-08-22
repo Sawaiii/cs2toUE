@@ -89,6 +89,49 @@ def main(argv):
     out_setting.output_resolution = unreal.IntPoint(int(opts["resx"]), int(opts["resy"]))
     out_setting.file_name_format = "{sequence_name}.{frame_number}"
 
+    # The "video memory exhausted" banner is drawn by the streaming system inside the
+    # render world, where a console command from the editor does not reach. Turning the
+    # pool budget off removes the condition instead of hiding the message.
+    try:
+        cvars = config.find_or_add_setting_by_class(
+            unreal.MoviePipelineConsoleVariableSetting)
+        # turning streaming off removes the budget entirely: no budget, no banner
+        wanted = {"r.TextureStreaming": 0.0,
+                  "r.Streaming.PoolSize": 0.0,
+                  "r.Streaming.LimitPoolSizeToVRAM": 0.0}
+        try:
+            entries = []
+            for name, value in wanted.items():
+                entry = unreal.MoviePipelineConsoleVariableEntry()
+                entry.set_editor_property("name", name)
+                entry.set_editor_property("value", value)
+                entry.set_editor_property("is_enabled", True)
+                entries.append(entry)
+            cvars.set_editor_property("cvars", entries)
+        except Exception:
+            cvars.set_editor_property("console_variables", wanted)
+        cvars.set_editor_property("start_console_commands", ["DisableAllScreenMessages"])
+    except Exception as exc:
+        unreal.log_warning("cs2toUE: could not set render cvars ({})".format(exc))
+
+    # MRQ's own overrides: cinematic quality and no texture streaming, which is what
+    # removes the "video memory exhausted" banner on a small card - a console command
+    # cannot reach the render world, this setting is applied inside it
+    try:
+        over = config.find_or_add_setting_by_class(unreal.MoviePipelineGameOverrideSetting)
+        for prop, value in (("cinematic_quality_settings", True),
+                            ("texture_streaming",
+                             unreal.MoviePipelineTextureStreamingMethod.DISABLED),
+                            ("use_lod_zero", True),
+                            ("disable_hlo_ds", True),
+                            ("flush_grass_streaming", True)):
+            try:
+                over.set_editor_property(prop, value)
+            except Exception:
+                pass
+    except Exception as exc:
+        unreal.log_warning("cs2toUE: game override unavailable ({})".format(exc))
+
     aa = config.find_or_add_setting_by_class(unreal.MoviePipelineAntiAliasingSetting)
     if str(opts["quality"]).lower() == "preview":
         aa.spatial_sample_count = 1
