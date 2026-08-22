@@ -66,8 +66,26 @@ def collect(path, clean=True):
 
 
 def _key(name: str) -> str:
-    """Loose key so an Unreal asset name still matches its glTF mesh name."""
-    return "".join(c for c in str(name).lower() if c.isalnum())
+    """Loose key so an Unreal asset name still matches its glTF mesh name.
+
+    The two spellings differ in ways that carry no meaning: the exporter writes
+    "n0_lr0_agg_prop_wireconduits_0_fragment3" while Unreal ends up with
+    "n0_lr0_agg_merge_wireconduits_0" plus a hash suffix. Dropping the words that
+    differ and the hash leaves the part that identifies the prop.
+    """
+    low = str(name).lower()
+    low = low.rsplit(".", 1)[-1]
+    for word in ("_fragment", "fragment"):
+        cut = low.find(word)
+        if cut > 0:
+            low = low[:cut]
+    for word in ("agg_prop_", "agg_merge_", "agg_", "_mesh", "meshset_"):
+        low = low.replace(word, "_")
+    flat = "".join(c for c in low if c.isalnum())
+    # trailing 32 character hash Unreal appends to duplicate names
+    if len(flat) > 32 and all(c in "0123456789abcdef" for c in flat[-32:]):
+        flat = flat[:-32]
+    return flat
 
 
 def load_placement(path):
@@ -89,11 +107,23 @@ def load_placement(path):
         except Exception as exc:
             unreal.log_warning("cs2toUE: placement unreadable ({})".format(exc))
             continue
+        groups = {}
         for item in data.get("items", []):
             if item.get("translation") == [0.0, 0.0, 0.0] and                     item.get("scale") == [1.0, 1.0, 1.0]:
                 continue          # baked - the origin is already right
-            out[_key(item.get("mesh", ""))] = item
-        unreal.log("cs2toUE: placement for {} mesh(es) loaded".format(len(out)))
+            groups.setdefault(_key(item.get("mesh", "")), []).append(item)
+        # Only unambiguous matches are used. Several glTF fragments can collapse onto
+        # one Unreal asset, and moving that asset by one fragment's transform would
+        # drag the others out of place - worse than leaving it where the exporter put
+        # it.
+        skipped = 0
+        for key, items in groups.items():
+            if len(items) == 1:
+                out[key] = items[0]
+            else:
+                skipped += 1
+        unreal.log("cs2toUE: placement for {} mesh(es) loaded, {} ambiguous group(s) "
+                   "left alone".format(len(out), skipped))
     return out
 
 
