@@ -899,6 +899,23 @@ def main(argv):
     seq.set_playback_start_seconds(0.0)
     seq.set_playback_end_seconds(duration)
 
+    # Every rebuild used to spawn a fresh set and leave the previous one behind: the
+    # level ended up with ninety player actors for a ten player scene, all animating
+    # on top of each other.
+    removed = 0
+    try:
+        sub = editor_actor_subsystem()
+        for actor in (sub.get_all_level_actors() if sub else []):
+            label = str(actor.get_actor_label())
+            if label.startswith(("player_", "grenade_", "camera_", "fx_", "wpn_",
+                                 "cs2toUE_")):
+                sub.destroy_actor(actor)
+                removed += 1
+    except Exception as exc:
+        unreal.log_warning("cs2toUE: could not clear old actors ({})".format(exc))
+    if removed:
+        unreal.log("cs2toUE: {} actor(s) from a previous build removed".format(removed))
+
     total_keys = 0
     cameras = []
     weapons_placed = 0

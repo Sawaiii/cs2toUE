@@ -98,7 +98,13 @@ def main(argv):
         # turning streaming off removes the budget entirely: no budget, no banner
         wanted = {"r.TextureStreaming": 0.0,
                   "r.Streaming.PoolSize": 0.0,
-                  "r.Streaming.LimitPoolSizeToVRAM": 0.0}
+                  "r.Streaming.LimitPoolSizeToVRAM": 0.0,
+                  # A decompiled map is a bright sky over dark interiors; auto exposure
+                  # chases that and blows the whole frame to white. Fixed exposure is
+                  # what a moviemaker wants anyway.
+                  "r.DefaultFeature.AutoExposure": 0.0,
+                  "r.EyeAdaptation.MethodOverride": 2.0,
+                  "r.DefaultFeature.AutoExposure.Bias": 1.0}
         try:
             entries = []
             for name, value in wanted.items():

@@ -255,7 +255,17 @@ def run_script(cfg, script, script_args, dry_run: bool = False) -> list:
            "-NoScreenMessages",
            # applied before any world loads, unlike a console command from a script;
            # no streaming budget means no "video memory exhausted" banner in frames
-           "-dpcvars=r.TextureStreaming=0"]
+           "-dpcvars=r.TextureStreaming=0",
+           # Distance fields are for Lumen and ray traced shadows; building them for a
+           # decompiled map means thousands of mesh builds before the first frame, and
+           # a headless preview does not use them. "-ini:" is the only way to set this
+           # early enough - and it avoids commas, which Unreal treats as separators.
+           "-ini:Engine:[SystemSettings]:r.GenerateMeshDistanceFields=0",
+           # Lumen needs those distance fields; without them it renders the scene flat
+           # white and says so on screen. A headless preview does not need global
+           # illumination, so it goes off together with them.
+           "-ini:Engine:[SystemSettings]:r.DynamicGlobalIlluminationMethod=0",
+           "-ini:Engine:[SystemSettings]:r.ReflectionMethod=0"]
     installed = Path(cfg.ue_engine or "") / "Engine" / "Build" / "InstalledBuild.txt"
     cmd.append("-ddc=InstalledNoZenLocalFallback" if installed.is_file()
                else "-ddc=NoZenLocalFallback")
