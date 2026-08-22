@@ -204,6 +204,15 @@ def convert(cfg, name_or_file, force: bool = False, cs2_dir: str = "") -> MapBui
     total = sum(p.stat().st_size for p in out_dir.rglob("*") if p.is_file())
     main = max(meshes, key=lambda p: p.stat().st_size)
 
+    # where each mesh goes: most of a map is baked in world space, but a few hundred
+    # props carry a transform that only lives in the glTF node tree
+    try:
+        from . import glb
+        placement = glb.write_placement(main)
+        info(f"placement written: {placement.name}")
+    except Exception as exc:
+        warn(f"could not read the scene graph ({exc}); props may land at the origin")
+
     build = MapBuild(
         name=map_file.name, vpk=map_file.vpk, vpk_size=map_file.size, vpk_mtime=map_file.mtime,
         out=str(out_dir), files=len(meshes), main=str(main), bytes=total,

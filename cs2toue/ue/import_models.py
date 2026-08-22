@@ -16,6 +16,10 @@ import unreal
 DEFAULTS = {
     "path": os.environ.get("CS2TOUE_MODELS", ""),
     "package": "/Game/cs2toUE/Models",
+    # importing a finished agent again costs many minutes, so a rerun skips what is
+    # already in the project unless it is named explicitly
+    "only": "",
+    "skip_existing": 1,
 }
 
 
@@ -36,13 +40,22 @@ def parse_args(argv):
 
 
 def model_folders(root):
+    """[(model name, folder with glb files)].
+
+    The name is the top folder under the models root - the same name the library and
+    the mapping use. Taking the basename of the deep folder instead gave "ak47" for a
+    model the rest of the program calls "weapon_rif_ak47", so its assets landed in a
+    package nothing was looking in.
+    """
     if not os.path.isdir(root):
         return []
-    # a folder that directly contains glb files is one model
     out = []
     for dirpath, _dirs, files in os.walk(root):
-        if any(f.lower().endswith((".glb", ".gltf")) for f in files):
-            out.append(dirpath)
+        if not any(f.lower().endswith((".glb", ".gltf")) for f in files):
+            continue
+        rel = os.path.relpath(dirpath, root)
+        name = rel.split(os.sep)[0] if rel not in (".", "") else os.path.basename(root)
+        out.append((name, dirpath))
     return sorted(out)
 
 
@@ -54,10 +67,22 @@ def main(argv):
         return
 
     tools = unreal.AssetToolsHelpers.get_asset_tools()
+    # "+" not "," - Unreal splits an -ExecCmds value on commas, so a comma separated
+    # list arrives as one name and everything after it is run as console commands
+    raw = str(opts["only"]).replace(",", "+")
+    only = [w.strip().lower() for w in raw.split("+") if w.strip()]
     total = 0
-    for folder in folders:
-        name = os.path.basename(folder.rstrip("\\/"))
+    for name, folder in folders:
         package = "{}/{}".format(opts["package"].rstrip("/"), name)
+        if only and name.lower() not in only:
+            continue
+        if not only and int(opts["skip_existing"]):
+            try:
+                if unreal.EditorAssetLibrary.does_directory_exist(package):
+                    unreal.log("cs2toUE: {} already imported, skipping".format(name))
+                    continue
+            except Exception:
+                pass
         tasks = []
         for f in sorted(os.listdir(folder)):
             if not f.lower().endswith((".glb", ".gltf")):

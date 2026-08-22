@@ -522,6 +522,9 @@ def cmd_ue(args):
         if not src.is_dir():
             raise Fail(f"no exported models in {src} - cs2toue models export <name>")
         extra = [f"--package={args.package}"] if args.package else []
+        if getattr(args, "only", ""):
+            # commas would be eaten by Unreal's -ExecCmds parsing
+            extra.append("--only=" + args.only.replace(",", "+"))
         ueproject.run_script(cfg, IMPORT_MODELS, [src] + extra, dry_run=args.dry_run)
         if args.scene and not args.dry_run:
             models.write_ue_mapping(cfg, args.scene, args.package or "/Game/cs2toUE/Models")
@@ -1059,6 +1062,7 @@ def build_parser() -> argparse.ArgumentParser:
     x.add_argument("--dry-run", action="store_true", help="print the command instead of running")
     x = us.add_parser("models", help="import exported models into the project")
     x.add_argument("--path", default="", help="models folder (default: the models folder in the workspace)")
+    x.add_argument("--only", default="", help="только эти модели, через запятую")
     x.add_argument("--scene", default="", help="also write ue_mapping.json for this scene")
     x.add_argument("--package", default="", help="content path, default /Game/cs2toUE/Models")
     x.add_argument("--dry-run", action="store_true")

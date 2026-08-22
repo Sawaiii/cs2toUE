@@ -10,6 +10,7 @@ world origin, which is exactly where the demo coordinates expect the map to be (
 scene tracks use raw Source coordinates scaled by --scale in build_sequence.py).
 """
 
+import json
 import os
 import sys
 
@@ -64,6 +65,38 @@ def collect(path, clean=True):
     return sorted(out), sorted(skipped)
 
 
+def _key(name: str) -> str:
+    """Loose key so an Unreal asset name still matches its glTF mesh name."""
+    return "".join(c for c in str(name).lower() if c.isalnum())
+
+
+def load_placement(path):
+    """{mesh key: transform} written by cs2toue before the import.
+
+    Most of a decompiled map is baked in world space and belongs at the origin; a few
+    hundred props carry a real transform, and without this they would all land in a
+    heap at 0,0,0.
+    """
+    folder = path if os.path.isdir(path) else os.path.dirname(path)
+    out = {}
+    for name in ("placement.json",):
+        f = os.path.join(folder, name)
+        if not os.path.isfile(f):
+            continue
+        try:
+            with open(f, "r", encoding="utf-8") as fh:
+                data = json.load(fh)
+        except Exception as exc:
+            unreal.log_warning("cs2toUE: placement unreadable ({})".format(exc))
+            continue
+        for item in data.get("items", []):
+            if item.get("translation") == [0.0, 0.0, 0.0] and                     item.get("scale") == [1.0, 1.0, 1.0]:
+                continue          # baked - the origin is already right
+            out[_key(item.get("mesh", ""))] = item
+        unreal.log("cs2toUE: placement for {} mesh(es) loaded".format(len(out)))
+    return out
+
+
 def main(argv):
     opts = parse_args(argv)
     files, skipped = collect(opts["path"], clean=bool(int(opts["clean"])))
@@ -97,17 +130,33 @@ def main(argv):
             sub = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
         except Exception:
             pass
+        placed = load_placement(opts["path"])
         origin = unreal.Vector(0, 0, 0)
         rot = unreal.Rotator(0, 0, 0)
+        off = 0
         for path in imported:
             asset = unreal.EditorAssetLibrary.load_asset(path)
             if not isinstance(asset, (unreal.StaticMesh, unreal.Blueprint)):
                 continue
-            actor = (sub.spawn_actor_from_object(asset, origin, rot) if sub
-                     else unreal.EditorLevelLibrary.spawn_actor_from_object(asset, origin, rot))
+            where = placed.get(_key(asset.get_name()))
+            loc, rotation, scale = origin, rot, unreal.Vector(1, 1, 1)
+            if where:
+                # glTF is Y up right handed in metres, Unreal is Z up left handed in cm
+                tx, ty, tz = where["translation"]
+                loc = unreal.Vector(-tz * 100.0, tx * 100.0, ty * 100.0)
+                sx, sy, sz = where["scale"]
+                scale = unreal.Vector(sz, sx, sy)
+                if any(abs(v) > 0.01 for v in where["rotation"]):
+                    rx, ry, rz = where["rotation"]
+                    rotation = unreal.Rotator(ry, -rz, rx)
+                off += 1
+            actor = (sub.spawn_actor_from_object(asset, loc, rotation) if sub
+                     else unreal.EditorLevelLibrary.spawn_actor_from_object(asset, loc, rotation))
             if actor:
                 actor.set_actor_label("cs2map_" + asset.get_name())
-                actor.set_actor_scale3d(unreal.Vector(1, 1, 1))
+                actor.set_actor_scale3d(scale)
+        unreal.log("cs2toUE: {} mesh(es) placed by transform, the rest are baked "
+                   "in world space".format(off))
     try:
         unreal.EditorLoadingAndSavingUtils.save_dirty_packages(True, True)
     except Exception as exc:

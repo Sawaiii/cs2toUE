@@ -241,6 +241,8 @@ def run_script(cfg, script, script_args, dry_run: bool = False) -> list:
     """
     editor, project = ensure(cfg)
     arg = " ".join(str(a).replace(chr(92), "/") for a in [script] + list(script_args))
+    # Never put a comma inside an argument value: Unreal splits -ExecCmds on commas
+    # and would run everything after the first one as separate console commands.
     # RenderOffscreen, not NullRHI: without a real RHI this engine build cannot spawn
     # actors from a class (camera) - two different crash paths confirmed on 5.5. The
     # first boot of a project compiles shaders and takes long; the result lands in the
