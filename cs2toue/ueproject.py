@@ -255,7 +255,7 @@ def run_script(cfg, script, script_args, dry_run: bool = False) -> list:
            "-NoScreenMessages",
            # applied before any world loads, unlike a console command from a script;
            # no streaming budget means no "video memory exhausted" banner in frames
-           "-dpcvars=r.TextureStreaming=0",
+           "-dpcvars=r.Streaming.PoolSize=1000",
            # Distance fields are for Lumen and ray traced shadows; building them for a
            # decompiled map means thousands of mesh builds before the first frame, and
            # a headless preview does not use them. "-ini:" is the only way to set this

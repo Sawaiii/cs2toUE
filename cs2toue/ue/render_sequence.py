@@ -56,8 +56,7 @@ def main(argv):
 
     # engine warnings must not be burnt into the frames, and the default streaming
     # pool is what triggers them on a 4 GB card
-    for cmd in ("DisableAllScreenMessages", "r.Streaming.PoolSize 2000",
-                "r.Streaming.HLODStrategy 2"):
+    for cmd in ("DisableAllScreenMessages", "r.Streaming.HLODStrategy 2"):
         try:
             unreal.SystemLibrary.execute_console_command(None, cmd)
         except Exception:
@@ -95,30 +94,46 @@ def main(argv):
     try:
         cvars = config.find_or_add_setting_by_class(
             unreal.MoviePipelineConsoleVariableSetting)
-        # turning streaming off removes the budget entirely: no budget, no banner
-        wanted = {"r.TextureStreaming": 0.0,
-                  "r.Streaming.PoolSize": 0.0,
-                  "r.Streaming.LimitPoolSizeToVRAM": 0.0,
-                  # A decompiled map is a bright sky over dark interiors; auto exposure
-                  # chases that and blows the whole frame to white. Fixed exposure is
-                  # what a moviemaker wants anyway.
+        # Streaming ON with a pool that fits the card: turning streaming off made the
+        # "video memory exhausted" banner worse, not better, because every texture
+        # then loads at full resolution and stays resident.
+        wanted = {"r.TextureStreaming": 1.0,
+                  "r.Streaming.PoolSize": 1000.0,
+                  "r.Streaming.LimitPoolSizeToVRAM": 1.0,
+                  # a decompiled map is a bright sky over dark interiors; auto exposure
+                  # chases that and blows the frame to white
                   "r.DefaultFeature.AutoExposure": 0.0,
-                  "r.EyeAdaptation.MethodOverride": 2.0,
-                  "r.DefaultFeature.AutoExposure.Bias": 1.0}
+                  "r.EyeAdaptation.MethodOverride": 2.0}
+        if str(opts["quality"]).lower() == "preview":
+            # A full map plus a dozen agents does not fit in 4 GB at full quality, and
+            # the engine prints "video memory has been exhausted" across every frame
+            # until it does. Preview trims what costs the most memory and the least
+            # in a rough cut; "final" keeps all of it.
+            wanted.update({
+                "r.Streaming.MipBias": 2.0,
+                "r.Streaming.PoolSize": 500.0,
+                "r.Shadow.Virtual.Enable": 0.0,
+                "r.Nanite.Streaming.StreamingPoolSize": 96.0,
+                "r.VolumetricCloud": 0.0,
+                "r.VolumetricFog": 0.0,
+                "r.SSR.Quality": 0.0,
+            })
+        # These go through a method, not a property: setting "cvars" directly is
+        # silently rejected, which is why none of this applied before.
+        for name, value in wanted.items():
+            try:
+                cvars.add_or_update_console_variable(name, value)
+            except Exception as exc:
+                unreal.log_warning("cs2toUE: cvar {} skipped ({})".format(name, exc))
         try:
-            entries = []
-            for name, value in wanted.items():
-                entry = unreal.MoviePipelineConsoleVariableEntry()
-                entry.set_editor_property("name", name)
-                entry.set_editor_property("value", value)
-                entry.set_editor_property("is_enabled", True)
-                entries.append(entry)
-            cvars.set_editor_property("cvars", entries)
-        except Exception:
-            cvars.set_editor_property("console_variables", wanted)
-        cvars.set_editor_property("start_console_commands", ["DisableAllScreenMessages"])
+            cvars.set_editor_property(
+                "start_console_commands",
+                ["DisableAllScreenMessages", "r.Streaming.HLODStrategy 2"])
+        except Exception as exc:
+            unreal.log_warning("cs2toUE: start commands skipped ({})".format(exc))
+        unreal.log("cs2toUE: {} render cvar(s) set".format(len(wanted)))
     except Exception as exc:
-        unreal.log_warning("cs2toUE: could not set render cvars ({})".format(exc))
+        unreal.log_warning("cs2toUE: console variable setting unavailable ({})".format(exc))
 
     # MRQ's own overrides: cinematic quality and no texture streaming, which is what
     # removes the "video memory exhausted" banner on a small card - a console command
@@ -127,7 +142,7 @@ def main(argv):
         over = config.find_or_add_setting_by_class(unreal.MoviePipelineGameOverrideSetting)
         for prop, value in (("cinematic_quality_settings", True),
                             ("texture_streaming",
-                             unreal.MoviePipelineTextureStreamingMethod.DISABLED),
+                             unreal.MoviePipelineTextureStreamingMethod.NONE),
                             ("use_lod_zero", True),
                             ("disable_hlo_ds", True),
                             ("flush_grass_streaming", True)):

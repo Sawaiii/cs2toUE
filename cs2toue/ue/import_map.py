@@ -12,6 +12,7 @@ scene tracks use raw Source coordinates scaled by --scale in build_sequence.py).
 
 import json
 import os
+import re
 import sys
 
 import unreal
@@ -22,6 +23,9 @@ DEFAULTS = {
     "spawn": 1,
     "scale": 100.0,   # glTF is in metres; 100 uu per metre keeps 1 uu = 1 cm
     "clean": 1,       # skip helper geometry (skybox, clips, triggers, nav)
+    # re-place actors from assets already in the project, without
+    # importing the glb again - the import is the slow part
+    "reuse": 0,
 }
 
 # helper geometry nobody wants in a cinematic level - the by-hand workflow deletes
@@ -65,66 +69,76 @@ def collect(path, clean=True):
     return sorted(out), sorted(skipped)
 
 
-def _key(name: str) -> str:
-    """Loose key so an Unreal asset name still matches its glTF mesh name.
+def _base_key(name: str) -> str:
+    """Key that survives the renaming between exporter and engine.
 
-    The two spellings differ in ways that carry no meaning: the exporter writes
-    "n0_lr0_agg_prop_wireconduits_0_fragment3" while Unreal ends up with
-    "n0_lr0_agg_merge_wireconduits_0" plus a hash suffix. Dropping the words that
-    differ and the hash leaves the part that identifies the prop.
+    Three differences, both tools' habits rather than any one map's:
+      - the exporter writes one mesh per fragment ("..._ibeams_0_fragment10");
+      - Unreal appends a 32 character content hash when two assets would collide;
+      - dots in a mesh name become underscores, and Unreal often extends the name
+        ("a.b" -> "a_b_v1_bg_studio_lod0"), so matching has to allow a prefix.
     """
     low = str(name).lower()
-    low = low.rsplit(".", 1)[-1]
-    for word in ("_fragment", "fragment"):
-        cut = low.find(word)
-        if cut > 0:
-            low = low[:cut]
-    for word in ("agg_prop_", "agg_merge_", "agg_", "_mesh", "meshset_"):
-        low = low.replace(word, "_")
-    flat = "".join(c for c in low if c.isalnum())
-    # trailing 32 character hash Unreal appends to duplicate names
-    if len(flat) > 32 and all(c in "0123456789abcdef" for c in flat[-32:]):
-        flat = flat[:-32]
-    return flat
+    low = re.sub(r"_fragment\d+$", "", low)
+    low = re.sub(r"_[0-9a-f]{32}$", "", low)
+    return "".join(c for c in low if c.isalnum())
+
+
+class AssetIndex:
+    """Finds the imported mesh for a glTF mesh name, exact hit or shortest prefix."""
+
+    def __init__(self):
+        self.exact = {}
+        self.sorted_keys = []
+
+    def add(self, key, asset):
+        self.exact.setdefault(key, []).append(asset)
+
+    def freeze(self):
+        for group in self.exact.values():
+            group.sort(key=lambda a: a.get_name())
+        self.sorted_keys = sorted(self.exact, key=len)
+
+    def find(self, key):
+        hit = self.exact.get(key)
+        if hit:
+            return hit
+        for candidate in self.sorted_keys:
+            if candidate.startswith(key) or key.startswith(candidate):
+                return self.exact[candidate]
+        return []
 
 
 def load_placement(path):
-    """{mesh key: transform} written by cs2toue before the import.
-
-    Most of a decompiled map is baked in world space and belongs at the origin; a few
-    hundred props carry a real transform, and without this they would all land in a
-    heap at 0,0,0.
-    """
+    """[{mesh, translation, rotation, scale}] written by cs2toue before the import."""
     folder = path if os.path.isdir(path) else os.path.dirname(path)
-    out = {}
-    for name in ("placement.json",):
-        f = os.path.join(folder, name)
-        if not os.path.isfile(f):
-            continue
-        try:
-            with open(f, "r", encoding="utf-8") as fh:
-                data = json.load(fh)
-        except Exception as exc:
-            unreal.log_warning("cs2toUE: placement unreadable ({})".format(exc))
-            continue
-        groups = {}
-        for item in data.get("items", []):
-            if item.get("translation") == [0.0, 0.0, 0.0] and                     item.get("scale") == [1.0, 1.0, 1.0]:
-                continue          # baked - the origin is already right
-            groups.setdefault(_key(item.get("mesh", "")), []).append(item)
-        # Only unambiguous matches are used. Several glTF fragments can collapse onto
-        # one Unreal asset, and moving that asset by one fragment's transform would
-        # drag the others out of place - worse than leaving it where the exporter put
-        # it.
-        skipped = 0
-        for key, items in groups.items():
-            if len(items) == 1:
-                out[key] = items[0]
-            else:
-                skipped += 1
-        unreal.log("cs2toUE: placement for {} mesh(es) loaded, {} ambiguous group(s) "
-                   "left alone".format(len(out), skipped))
-    return out
+    # the file sits next to the glb, which is nested a few folders below the map root
+    f = ""
+    for root, _dirs, files in os.walk(folder):
+        if "placement.json" in files:
+            f = os.path.join(root, "placement.json")
+            break
+    if not f:
+        unreal.log_warning("cs2toUE: no placement.json - props will sit at the origin")
+        return []
+    try:
+        with open(f, "r", encoding="utf-8") as fh:
+            return json.load(fh).get("items", [])
+    except Exception as exc:
+        unreal.log_warning("cs2toUE: placement unreadable ({})".format(exc))
+        return []
+
+
+def to_ue(item):
+    """glTF (Y up, right handed, metres) -> Unreal (Z up, left handed, centimetres)."""
+    tx, ty, tz = item["translation"]
+    sx, sy, sz = item["scale"]
+    rx, ry, rz = item["rotation"]
+    loc = unreal.Vector(-tz * 100.0, tx * 100.0, ty * 100.0)
+    scale = unreal.Vector(sz, sx, sy)
+    # unreal.Rotator takes (roll, pitch, yaw), not (pitch, yaw, roll)
+    rot = unreal.Rotator(rx, ry, -rz)
+    return loc, rot, scale
 
 
 def main(argv):
@@ -147,12 +161,21 @@ def main(argv):
         task.set_editor_property("replace_existing", True)
         task.set_editor_property("save", True)
         tasks.append(task)
-    unreal.AssetToolsHelpers.get_asset_tools().import_asset_tasks(tasks)
-
     imported = []
-    for task in tasks:
-        imported += list(task.get_editor_property("imported_object_paths") or [])
-    unreal.log("cs2toUE: imported {} asset(s)".format(len(imported)))
+    if int(opts["reuse"]):
+        try:
+            imported = list(unreal.EditorAssetLibrary.list_assets(
+                opts["package"], recursive=True))
+            unreal.log("cs2toUE: reusing {} asset(s) already in the project".format(
+                len(imported)))
+        except Exception as exc:
+            unreal.log_error("cs2toUE: nothing to reuse ({})".format(exc))
+            return
+    else:
+        unreal.AssetToolsHelpers.get_asset_tools().import_asset_tasks(tasks)
+        for task in tasks:
+            imported += list(task.get_editor_property("imported_object_paths") or [])
+        unreal.log("cs2toUE: imported {} asset(s)".format(len(imported)))
 
     if int(opts["spawn"]):
         sub = None
@@ -160,33 +183,66 @@ def main(argv):
             sub = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
         except Exception:
             pass
-        placed = load_placement(opts["path"])
-        origin = unreal.Vector(0, 0, 0)
-        rot = unreal.Rotator(0, 0, 0)
-        off = 0
+        cleared = 0
+        try:
+            for actor in (sub.get_all_level_actors() if sub else []):
+                if str(actor.get_actor_label()).startswith("cs2map_"):
+                    sub.destroy_actor(actor)
+                    cleared += 1
+        except Exception as exc:
+            unreal.log_warning("cs2toUE: could not clear old map actors ({})".format(exc))
+        if cleared:
+            unreal.log("cs2toUE: {} map actor(s) from a previous run removed".format(cleared))
+
+        # index the imported meshes by the key their glTF name reduces to
+        index = AssetIndex()
         for path in imported:
             asset = unreal.EditorAssetLibrary.load_asset(path)
             if not isinstance(asset, (unreal.StaticMesh, unreal.Blueprint)):
                 continue
-            where = placed.get(_key(asset.get_name()))
-            loc, rotation, scale = origin, rot, unreal.Vector(1, 1, 1)
-            if where:
-                # glTF is Y up right handed in metres, Unreal is Z up left handed in cm
-                tx, ty, tz = where["translation"]
-                loc = unreal.Vector(-tz * 100.0, tx * 100.0, ty * 100.0)
-                sx, sy, sz = where["scale"]
-                scale = unreal.Vector(sz, sx, sy)
-                if any(abs(v) > 0.01 for v in where["rotation"]):
-                    rx, ry, rz = where["rotation"]
-                    rotation = unreal.Rotator(ry, -rz, rx)
-                off += 1
-            actor = (sub.spawn_actor_from_object(asset, loc, rotation) if sub
-                     else unreal.EditorLevelLibrary.spawn_actor_from_object(asset, loc, rotation))
+            index.add(_base_key(asset.get_name()), asset)
+        index.freeze()
+
+        # One actor per placement, not per asset: a prop that appears forty times in
+        # the map is forty actors sharing one mesh, and Unreal deduplicates identical
+        # geometry, so the counts on the two sides do not have to match.
+        items = load_placement(opts["path"])
+        used = set()
+        placed = 0
+        seen_in_group = {}
+        for item in items:
+            key = _base_key(item.get("mesh", ""))
+            group = index.find(key)
+            if not group:
+                continue
+            nth = seen_in_group.get(key, 0)
+            asset = group[nth] if nth < len(group) else group[0]
+            seen_in_group[key] = nth + 1
+            used.add(key)
+            loc, rot, scale = to_ue(item)
+            actor = (sub.spawn_actor_from_object(asset, loc, rot) if sub
+                     else unreal.EditorLevelLibrary.spawn_actor_from_object(asset, loc, rot))
             if actor:
                 actor.set_actor_label("cs2map_" + asset.get_name())
                 actor.set_actor_scale3d(scale)
-        unreal.log("cs2toUE: {} mesh(es) placed by transform, the rest are baked "
-                   "in world space".format(off))
+                placed += 1
+
+        # anything the scene graph never mentioned still belongs in the level
+        origin, no_rot = unreal.Vector(0, 0, 0), unreal.Rotator(0, 0, 0)
+        leftover = 0
+        for key, group in index.exact.items():
+            if key in used:
+                continue
+            for asset in group:
+                actor = (sub.spawn_actor_from_object(asset, origin, no_rot) if sub
+                         else unreal.EditorLevelLibrary.spawn_actor_from_object(
+                             asset, origin, no_rot))
+                if actor:
+                    actor.set_actor_label("cs2map_" + asset.get_name())
+                    leftover += 1
+        unreal.log("cs2toUE: {} mesh(es) placed from the scene graph, {} without a "
+                   "placement entry".format(placed, leftover))
+
     try:
         unreal.EditorLoadingAndSavingUtils.save_dirty_packages(True, True)
     except Exception as exc:

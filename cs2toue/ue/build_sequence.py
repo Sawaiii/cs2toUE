@@ -587,6 +587,20 @@ def attach_weapons(seq, player_binding, actor, rows, mapping, fps, duration, mis
     return made
 
 
+def hide_actor(seq, binding, duration, fps):
+    """Keep an actor out of frame for the whole clip - used for the POV target."""
+    try:
+        track = binding.add_track(unreal.MovieSceneVisibilityTrack)
+        section = track.add_section()
+        section.set_range_seconds(0.0, duration)
+        section.get_all_channels()[0].add_key(
+            unreal.FrameNumber(0), False, 0.0, TIME_UNIT.DISPLAY_RATE)
+        return True
+    except Exception as exc:
+        unreal.log_warning("cs2toUE: could not hide the POV target ({})".format(exc))
+        return False
+
+
 def add_visibility_track(seq, binding, rows, fps):
     """One bool key per alive/dead transition (bHidden is inverted visibility)."""
     transitions = []
@@ -691,8 +705,8 @@ def add_camera(seq, label, rows, fps, scale, z_offset, duration, make_cut,
 # radius in source units, used to size the fallback shapes
 EFFECT_RADIUS = {"smoke": 144.0, "molotov": 150.0, "he": 70.0, "flash": 50.0,
                  "decoy": 60.0, "bomb": 250.0}
-TRACER_LENGTH = 700.0     # unreal units of visible streak (about 7 m)
-TRACER_WIDTH = 0.006      # cylinder scale: the engine shape is 100 cm across
+TRACER_LENGTH = 1400.0    # unreal units of visible streak (about 14 m)
+TRACER_WIDTH = 0.015      # cylinder scale: the engine shape is 100 cm across
 FALLBACK_SHAPE = {
     "smoke": "/Engine/BasicShapes/Sphere.Sphere",
     "molotov": "/Engine/BasicShapes/Cylinder.Cylinder",
@@ -916,6 +930,26 @@ def main(argv):
     if removed:
         unreal.log("cs2toUE: {} actor(s) from a previous build removed".format(removed))
 
+    # Whose model to hide: a first person camera sits inside its target's head, and
+    # the game does not draw your own body either. Only when that camera is the one
+    # the cut looks through.
+    hidden_ids = set()
+    want_cam = str(opts["active_camera"]).strip().lower()
+    cams = [a for a in scene["actors"] if a.get("kind") == "camera" and a.get("track")]
+    active_cam = None
+    for cam in cams:
+        if want_cam and want_cam in (str(cam.get("id", "")).lower(),
+                                     str(cam.get("name", "")).lower()):
+            active_cam = cam
+            break
+    if active_cam is None and cams:
+        active_cam = cams[0]
+    if active_cam and str(active_cam.get("meta", {}).get("rig", "")).lower() == "pov":
+        target = str(active_cam.get("meta", {}).get("target", ""))
+        if target:
+            hidden_ids.add(target)
+            unreal.log("cs2toUE: first person camera - hiding {}".format(target))
+
     total_keys = 0
     cameras = []
     weapons_placed = 0
@@ -969,10 +1003,13 @@ def main(argv):
                 if n or n_fire:
                     unreal.log("cs2toUE: {} - {} animation sections, {} fire".format(
                         label, n, n_fire))
-            if actor["kind"] == "player" and int(opts["weapons"]):
+            if (actor["kind"] == "player" and int(opts["weapons"])
+                    and actor.get("id") not in hidden_ids):
                 weapons_placed += attach_weapons(seq, binding, actor, rows, mapping,
                                                  fps, duration, weapons_missing)
-            if int(opts["visibility"]) and actor["kind"] == "player":
+            if actor.get("id") in hidden_ids:
+                hide_actor(seq, binding, duration, fps)
+            elif int(opts["visibility"]) and actor["kind"] == "player":
                 add_visibility_track(seq, binding, rows, fps)
 
     if weapons_placed or weapons_missing:

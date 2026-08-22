@@ -568,6 +568,8 @@ def cmd_ue(args):
                 raise Fail(f"{target} is not in the map library - cs2toue maps convert {target}")
             p = Path(build.out)
         extra = [f"--package={args.package}"] if args.package else []
+        if getattr(args, "reuse", False):
+            extra.append("--reuse=1")
         ueproject.import_map(cfg, p, extra, dry_run=args.dry_run)
         return
 
@@ -1078,6 +1080,8 @@ def build_parser() -> argparse.ArgumentParser:
     x = us.add_parser("map", help="import a converted map into the project")
     x.add_argument("map", help="map name from the library, or a folder with glb files")
     x.add_argument("--package", default="", help="content path, default /Game/cs2toUE/Maps")
+    x.add_argument("--reuse", action="store_true",
+                   help="переставить пропы из уже импортированных ассетов, без импорта")
     x.add_argument("--dry-run", action="store_true")
     s.set_defaults(func=cmd_ue)
 
